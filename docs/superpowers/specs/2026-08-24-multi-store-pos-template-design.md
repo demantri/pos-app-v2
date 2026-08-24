@@ -93,7 +93,6 @@ Semua route fitur berada di belakang middleware `auth`.
 | GET | `/stores` | `stores.index` | `stores/Index` |
 | POST | `/stores` | `stores.store` | — (validasi + redirect) |
 | GET | `/stores/{store}` | `stores.show` | `stores/Dashboard` |
-| PUT | `/stores/{store}` | `stores.update` | — |
 | GET | `/stores/{store}/pos` | `stores.pos` | `stores/pos/Index` |
 | POST | `/stores/{store}/pos/checkout` | `stores.pos.checkout` | — |
 | GET | `/stores/{store}/products` | `stores.products.index` | `stores/products/Index` |
@@ -111,14 +110,19 @@ starter kit tanpa perubahan.
 
 Parameter `{store}` adalah id numerik toko pada fase ini.
 
+Pengubahan data toko dilakukan lewat halaman Setting Toko
+(`stores.settings.update`); tidak ada endpoint `stores.update` terpisah.
+
 ### 4.2 Resolusi konteks toko
 
 - Middleware `App\Http\Middleware\ResolveStore` dipasang pada grup route
   `/stores/{store}/…`: mengambil toko dari `DemoData`, `abort(404)` bila tidak
   ada, lalu menyimpannya di request.
 - `App\Http\Middleware\HandleInertiaRequests` membagikan shared props
-  `currentStore` (objek toko aktif atau `null`) dan `stores` (daftar ringkas
-  semua toko: id, nama, kode).
+  `currentStore` (objek toko aktif atau `null`) dan `storeOptions` (daftar
+  ringkas semua toko: id, nama, kode). Nama `storeOptions` dipakai — bukan
+  `stores` — agar tidak bertabrakan dengan page prop `stores` di halaman Daftar
+  Toko.
 - Store switcher di header sidebar membaca kedua props itu dan bernavigasi ke
   **route yang sama** untuk toko lain (menukar parameter `store`), sehingga
   kasir yang sedang di halaman Produk tetap di halaman Produk setelah pindah
@@ -133,6 +137,7 @@ Satu kelas `App\Support\DemoData` berisi array statis dengan method:
 - `stores(): array` — id, nama, kode, alamat, telepon, status aktif, jumlah
   produk.
 - `store(int $id): ?array`
+- `storeOptions(): array` — bentuk ringkas untuk shared prop `storeOptions`.
 - `categories(int $storeId): array` — id, nama, deskripsi, jumlah produk.
 - `products(int $storeId): array` — id, nama, sku, barcode, kategori, harga,
   stok, satuan, status aktif, gambar (placeholder).
@@ -263,8 +268,14 @@ Feature test (PHPUnit 11, sudah ada di skeleton):
 - Store switcher: shared props `stores` dan `currentStore` terisi benar pada
   route ber-scope, dan `currentStore` bernilai `null` di `/stores`.
 
+Uji sisi klien: perhitungan keranjang POS (subtotal, diskon per item, diskon
+transaksi, PPN, pembulatan, kembalian) ditulis sebagai fungsi murni di
+`resources/js/lib/cart.ts` dan diuji dengan **Vitest**. Ini bagian paling rawan
+salah hitung di seluruh aplikasi, jadi diuji terpisah dari komponen.
+
 Perintah verifikasi: `php artisan test`, `vendor/bin/pint --test`,
-`npm run lint`, `vue-tsc --noEmit`, dan `npm run build`.
+`npm run lint:check`, `npm run types:check`, `npx vitest run`, dan
+`npm run build`.
 
 ## 10. Jalan ke fase 2
 
