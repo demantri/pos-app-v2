@@ -20,6 +20,11 @@
 - URL di sisi Vue dibangun lewat helper string `storePath(...)` (Task 2), BUKAN lewat Wayfinder. Alasan: route ber-parameter dipakai di banyak tempat termasuk store switcher yang menukar parameter secara dinamis; helper string lebih sederhana dan tidak bergantung pada hasil generate build. Wayfinder tetap terpasang dan tetap dipakai oleh halaman auth bawaan starter kit.
 - Shared prop untuk daftar toko bernama **`storeOptions`** (bukan `stores`) agar tidak bertabrakan dengan page prop `stores` di halaman Daftar Toko.
 - Route `dashboard` TIDAK dihapus (banyak test auth bawaan mengacu ke `route('dashboard')`); route itu diubah menjadi redirect ke `/stores`.
+- **Database: MySQL, bukan SQLite.** Mesin ini tidak punya ekstensi `pdo_sqlite`
+  (`PDO::getAvailableDrivers()` → mysql, pgsql, sqlsrv), jadi baik `.env` maupun
+  `phpunit.xml` memakai MySQL. Aplikasi memakai `db_pos_v2`; test memakai database
+  terpisah `db_pos_v2_test` supaya `RefreshDatabase` tidak pernah menghapus data dev.
+  Keduanya sudah dibuat dan `.env` sudah dikonfigurasi.
 - Setiap task diakhiri commit. Pesan commit berbahasa Indonesia, prefiks konvensional (`feat:`, `test:`, `chore:`, `refactor:`).
 - Verifikasi yang dipakai berulang: `php artisan test`, `vendor/bin/pint --test`, `npm run lint:check`, `npm run types:check`, `npm run build`, `npx vitest run`.
 
@@ -109,7 +114,7 @@ grep -E '"php"|laravel/framework' composer.json    # harus ^8.2 dan ^12.0
 ```bash
 cd /home/demantri/projects/laravel/pos-app-v2
 rsync -a --delete \
-  --exclude '.git/' --exclude '.env' --exclude 'docs/' \
+  --exclude '.git/' --exclude '.env' --exclude 'docs/' --exclude '.superpowers/' \
   --exclude 'vendor/' --exclude 'node_modules/' \
   --exclude 'database/database.sqlite' \
   /tmp/vue-sk/ ./
@@ -145,11 +150,26 @@ Ubah field `tailwind.config` menjadi string kosong:
 }
 ```
 
-- [ ] **Step 5: Install dependency dan siapkan database**
+- [ ] **Step 5: Install dependency dan siapkan database (MySQL)**
 
 ```bash
 composer install
 npm install
+```
+
+`.env` sudah diarahkan ke MySQL (`DB_CONNECTION=mysql`, `DB_DATABASE=db_pos_v2`) dan
+database `db_pos_v2` serta `db_pos_v2_test` sudah dibuat. Arahkan test ke database test —
+di `phpunit.xml`, ganti dua baris berikut:
+
+```xml
+        <env name="DB_CONNECTION" value="mysql"/>
+        <env name="DB_DATABASE" value="db_pos_v2_test"/>
+```
+
+(nilai bawaan starter kit adalah `sqlite` / `:memory:`, yang tidak bisa dipakai karena
+ekstensi `pdo_sqlite` tidak terpasang di mesin ini.)
+
+```bash
 php artisan migrate --force
 ```
 
@@ -4839,6 +4859,9 @@ npm install
 php artisan migrate
 composer run dev
 ```
+
+Database: MySQL. Aplikasi memakai `db_pos_v2`, test memakai `db_pos_v2_test`
+(lihat `phpunit.xml`). Mesin pengembangan ini tidak punya ekstensi `pdo_sqlite`.
 
 Buat akun demo:
 
