@@ -106,4 +106,27 @@ class DemoDataTest extends TestCase
         $this->assertSame('SDR', $stores[0]['code']);
         $this->assertSame('SDR-001', DemoData::products(1)[0]['sku']);
     }
+
+    /**
+     * Penjaga regresi: items_sold harus menjumlahkan qty seluruh item
+     * (unit terjual), bukan jumlah baris item (items_count). Beberapa
+     * transaksi punya baris dengan qty 2, jadi items_sold wajib lebih
+     * besar daripada total items_count untuk data ini.
+     */
+    public function test_dashboard_items_sold_counts_total_quantity_not_item_rows(): void
+    {
+        $transactions = DemoData::transactions(1);
+        $dashboard = DemoData::dashboard(1);
+
+        $expectedItemsSold = array_sum(array_map(
+            static fn (array $transaction): int|float => array_sum(array_column($transaction['items'], 'qty')),
+            $transactions,
+        ));
+
+        $this->assertSame($expectedItemsSold, $dashboard['items_sold']);
+        $this->assertGreaterThan(
+            array_sum(array_column($transactions, 'items_count')),
+            $dashboard['items_sold'],
+        );
+    }
 }

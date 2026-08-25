@@ -190,7 +190,10 @@ class DemoData
         return [
             'sales_today' => $total,
             'transactions_today' => $count,
-            'items_sold' => array_sum(array_column($transactions, 'items_count')),
+            'items_sold' => array_sum(array_map(
+                static fn (array $transaction): int|float => array_sum(array_column($transaction['items'], 'qty')),
+                $transactions,
+            )),
             'average_per_transaction' => $count > 0 ? (int) round($total / $count) : 0,
             'recent_transactions' => array_slice(array_reverse($transactions), 0, 5),
         ];
