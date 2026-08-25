@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\DemoData;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -42,6 +43,12 @@ class HandleInertiaRequests extends Middleware
                 'user' => $request->user(),
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
+            'currentStore' => fn () => $request->attributes->get('store'),
+            'storeOptions' => fn () => DemoData::storeOptions(),
+            'flash' => [
+                'success' => fn () => $request->session()->get('success'),
+                'error' => fn () => $request->session()->get('error'),
+            ],
         ];
     }
 }
