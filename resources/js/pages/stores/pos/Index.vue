@@ -22,7 +22,7 @@ import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useCart } from '@/composables/useCart';
 import PosLayout from '@/layouts/PosLayout.vue';
-import { changeFor } from '@/lib/cart';
+import { changeFor, lineSubtotal } from '@/lib/cart';
 import { formatRupiah } from '@/lib/format';
 import { storePath } from '@/lib/store-path';
 import type { BreadcrumbItem, Category, PaymentMethod, Product, Store, StoreSettings } from '@/types';
@@ -158,7 +158,18 @@ function startNewOrder(): void {
     paid.value = 0;
     paymentMethod.value = 'tunai';
     search.value = '';
-    searchInput.value?.focus();
+    searchInput.value?.focus?.();
+}
+
+/**
+ * Dialog struk secara default mengembalikan fokus ke elemen yang aktif
+ * sebelum dialog terbuka begitu ia ditutup, sehingga menimpa fokus manual
+ * di `startNewOrder`. Cegah perilaku bawaan itu dan arahkan fokus ke
+ * kolom scan setelah dialog benar-benar selesai ditutup.
+ */
+function onReceiptCloseAutoFocus(event: Event): void {
+    event.preventDefault();
+    searchInput.value?.focus?.();
 }
 
 useEventListener(window, 'keydown', (event: KeyboardEvent) => {
@@ -375,7 +386,7 @@ useEventListener(window, 'keydown', (event: KeyboardEvent) => {
         </Dialog>
 
         <Dialog v-model:open="receiptDialogOpen">
-            <DialogContent class="sm:max-w-sm">
+            <DialogContent class="sm:max-w-sm" @close-auto-focus="onReceiptCloseAutoFocus">
                 <DialogHeader>
                     <DialogTitle>{{ settings.receipt_header }}</DialogTitle>
                     <DialogDescription>{{ currentStore.address }}</DialogDescription>
@@ -384,7 +395,7 @@ useEventListener(window, 'keydown', (event: KeyboardEvent) => {
                 <div class="space-y-2 text-sm">
                     <div v-for="item in cart.items.value" :key="item.product_id" class="flex justify-between">
                         <span>{{ item.qty }} × {{ item.name }}</span>
-                        <span>{{ formatRupiah(item.price * item.qty - item.discount) }}</span>
+                        <span>{{ formatRupiah(lineSubtotal(item)) }}</span>
                     </div>
 
                     <Separator />
