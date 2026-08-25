@@ -52,3 +52,4 @@ npm run check
 npm run build
 ```
 # pos-app-v2
+# pos-app-v2
