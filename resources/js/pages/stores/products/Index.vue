@@ -332,11 +332,7 @@ function confirmDelete(): void {
                         <InputError :message="form.errors.stock" />
                     </div>
                     <div class="flex items-center gap-3 sm:col-span-2">
-                        <Switch
-                            id="product-active"
-                            :checked="form.is_active"
-                            @update:checked="form.is_active = $event"
-                        />
+                        <Switch id="product-active" v-model="form.is_active" />
                         <Label for="product-active">Produk aktif dijual</Label>
                     </div>
 
