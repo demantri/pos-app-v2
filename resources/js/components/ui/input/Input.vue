@@ -1,45 +1,40 @@
 <script setup lang="ts">
 import type { HTMLAttributes } from "vue"
 import { useVModel } from "@vueuse/core"
-import { computed, ref } from "vue"
+import { ref } from "vue"
 import { cn } from "@/lib/utils"
 
 const props = defineProps<{
   defaultValue?: string | number
   modelValue?: string | number
+  // Declared (but not read) purely so `v-model.number` / `v-model.trim` on
+  // `<Input>` don't fall through as a stray `modelmodifiers="[object
+  // Object]"` DOM attribute. Vue's own `emit()` already applies these
+  // modifiers to `update:modelValue` before the parent's v-model handler
+  // runs (it reads `modelModifiers` straight off the raw vnode props via
+  // `getModelModifiers`, regardless of whether the component declares it) —
+  // see `@vue/runtime-core`'s `emit()` — so this component does not need to
+  // (and must not) re-implement the conversion itself.
   modelModifiers?: { number?: boolean, trim?: boolean }
   class?: HTMLAttributes["class"]
 }>()
 
 const emits = defineEmits<{
   (e: "update:modelValue", payload: string | number): void
+  // Not implemented here — plain pass-through so callers can still write
+  // `@keydown="..."` (with native event modifiers like `.enter`/`.prevent`)
+  // on `<Input>` and have it checked against a real emit contract instead
+  // of silently falling outside `checkUnknownEvents` (which is what happens
+  // for `on*` listeners on any component that declares emits at all, per
+  // `@vue/language-core`'s `Omit<..., \`on${string}\`>`). The listener still
+  // reaches the native `<input>` element the ordinary way, via `$attrs`
+  // fallthrough — declaring an emit does not consume the prop.
+  (e: "keydown", payload: KeyboardEvent): void
 }>()
 
-const rawModelValue = useVModel(props, "modelValue", emits, {
+const modelValue = useVModel(props, "modelValue", emits, {
   passive: true,
   defaultValue: props.defaultValue,
-})
-
-// Native `v-model` modifiers (`.number`, `.trim`) only work out of the box on
-// plain elements. Since this component owns the `v-model` binding on the
-// inner `<input>`, we have to re-implement them ourselves, mirroring Vue's
-// own `.number`/`.trim` semantics (see `@vue/shared`'s `toNumber`), or
-// callers using `v-model.number`/`v-model.trim` on `<Input>` would silently
-// keep receiving raw strings instead of the converted value.
-const modelValue = computed({
-  get: () => rawModelValue.value,
-  set: (value) => {
-    if (typeof value === "string") {
-      if (props.modelModifiers?.trim) {
-        value = value.trim()
-      }
-      if (props.modelModifiers?.number) {
-        const parsed = Number(value)
-        value = Number.isNaN(parsed) ? value : parsed
-      }
-    }
-    rawModelValue.value = value
-  },
 })
 
 const inputRef = ref<HTMLInputElement | null>(null)

@@ -34,6 +34,14 @@ const delegatedProps = reactiveOmit(props, "tooltip")
         <slot />
       </SidebarMenuButtonChild>
     </TooltipTrigger>
+    <!--
+      TooltipContent's own TooltipContentProps doesn't declare `hidden`,
+      even though this file's `inheritAttrs: false` + `v-bind="{...forwarded,
+      ...$attrs}"` inside TooltipContent.vue already forwards it correctly
+      at runtime. Binding all three props via one v-bind object here (rather
+      than `:hidden=`) keeps this from tripping strictTemplates'
+      excess-property check on that upstream gap.
+    -->
     <TooltipContent
       v-bind="{ side: 'right', align: 'center', hidden: state !== 'collapsed' || isMobile }"
     >

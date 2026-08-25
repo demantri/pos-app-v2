@@ -60,6 +60,13 @@ onUnmounted(() => {
 </script>
 
 <template>
+  <!--
+    reka-ui's ListboxItem doesn't declare `id` in ListboxItemProps, even
+    though it reaches the underlying element at runtime. Merging it into the
+    same v-bind object as the spread `forwarded` (rather than a separate
+    `:id=` directive) keeps this from tripping strictTemplates'
+    excess-property check on that upstream gap.
+  -->
   <ListboxItem
     v-if="isRender"
     v-bind="{ ...forwarded, id }"

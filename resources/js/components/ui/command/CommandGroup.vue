@@ -30,6 +30,13 @@ onUnmounted(() => {
 </script>
 
 <template>
+  <!--
+    reka-ui's ListboxGroup doesn't declare `id`/`hidden` in ListboxGroupProps,
+    even though they do reach the underlying element at runtime. Merging them
+    into the same v-bind object as the spread `delegatedProps` (rather than
+    `:id=`/`:hidden=` directives) keeps this from tripping strictTemplates'
+    excess-property check on that upstream gap.
+  -->
   <ListboxGroup
     v-bind="{ ...delegatedProps, id, hidden: isRender ? undefined : true }"
     data-slot="command-group"
