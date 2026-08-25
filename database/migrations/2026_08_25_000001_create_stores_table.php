@@ -15,19 +15,21 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('code')->unique();
-            $table->string('address');
-            $table->string('phone');
+            $table->string('address')->default('');
+            $table->string('phone')->default('');
             $table->boolean('is_active')->default(true);
 
             // Setting toko (sengaja jadi kolom di sini, bukan tabel terpisah).
+            // Default '' / jam wajar dipasang supaya form "buat toko" (T5)
+            // tidak wajib mengisi keenamnya sebelum toko bisa disimpan.
             $table->string('currency')->default('IDR');
             $table->unsignedTinyInteger('tax_percent')->default(11);
             $table->unsignedInteger('rounding')->default(100);
-            $table->string('receipt_header');
-            $table->string('receipt_footer');
+            $table->string('receipt_header')->default('');
+            $table->string('receipt_footer')->default('');
             $table->string('paper_size')->default('58mm');
-            $table->string('open_time');
-            $table->string('close_time');
+            $table->string('open_time')->default('08:00');
+            $table->string('close_time')->default('21:00');
 
             $table->timestamps();
         });

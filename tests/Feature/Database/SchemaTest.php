@@ -83,6 +83,26 @@ class SchemaTest extends TestCase
         $this->assertDatabaseMissing('transaction_items', ['id' => $item->id]);
     }
 
+    public function test_deleting_a_category_preserves_its_products(): void
+    {
+        $store = Store::factory()->create();
+        $category = Category::factory()->create(['store_id' => $store->id]);
+        $product = Product::factory()->create([
+            'store_id' => $store->id,
+            'category_id' => $category->id,
+            'name' => 'Kopi Susu Gula Aren',
+            'stock' => 42,
+        ]);
+
+        $category->delete();
+        $product->refresh();
+
+        $this->assertDatabaseHas('products', ['id' => $product->id]);
+        $this->assertNull($product->category_id);
+        $this->assertSame('Kopi Susu Gula Aren', $product->name);
+        $this->assertSame(42, $product->stock);
+    }
+
     public function test_deleting_a_product_preserves_the_transaction_item_snapshot(): void
     {
         $product = Product::factory()->create(['name' => 'Kopi Susu Gula Aren', 'price' => 15000]);
@@ -115,16 +135,68 @@ class SchemaTest extends TestCase
         $this->assertSame('Dede', $transaction->cashier_name);
     }
 
-    public function test_product_sku_must_be_unique_within_a_store_but_not_across_stores(): void
+    public function test_product_sku_must_be_unique_within_a_store(): void
     {
         $storeA = Store::factory()->create();
-        $storeB = Store::factory()->create();
         $category = Category::factory()->create(['store_id' => $storeA->id]);
 
         Product::factory()->create(['store_id' => $storeA->id, 'category_id' => $category->id, 'sku' => 'SKU-001']);
 
         $this->expectException(QueryException::class);
         Product::factory()->create(['store_id' => $storeA->id, 'category_id' => $category->id, 'sku' => 'SKU-001']);
+    }
+
+    public function test_category_name_must_be_unique_within_a_store_but_not_across_stores(): void
+    {
+        $storeA = Store::factory()->create();
+        $storeB = Store::factory()->create();
+
+        Category::factory()->create(['store_id' => $storeA->id, 'name' => 'Minuman']);
+        $categoryB = Category::factory()->create(['store_id' => $storeB->id, 'name' => 'Minuman']);
+
+        $this->assertDatabaseHas('categories', ['id' => $categoryB->id, 'name' => 'Minuman', 'store_id' => $storeB->id]);
+
+        $this->expectException(QueryException::class);
+        Category::factory()->create(['store_id' => $storeA->id, 'name' => 'Minuman']);
+    }
+
+    public function test_transaction_number_must_be_unique_within_a_store_but_not_across_stores(): void
+    {
+        $storeA = Store::factory()->create();
+        $storeB = Store::factory()->create();
+
+        Transaction::factory()->create(['store_id' => $storeA->id, 'number' => 'TRX-0001']);
+        $transactionB = Transaction::factory()->create(['store_id' => $storeB->id, 'number' => 'TRX-0001']);
+
+        $this->assertDatabaseHas('transactions', ['id' => $transactionB->id, 'number' => 'TRX-0001', 'store_id' => $storeB->id]);
+
+        $this->expectException(QueryException::class);
+        Transaction::factory()->create(['store_id' => $storeA->id, 'number' => 'TRX-0001']);
+    }
+
+    public function test_product_factory_persists_an_explicitly_passed_category_id(): void
+    {
+        $storeA = Store::factory()->create();
+        $storeB = Store::factory()->create();
+        $categoryOfStoreB = Category::factory()->create(['store_id' => $storeB->id]);
+
+        // Sengaja mengoper category_id yang TIDAK sesuai store_id, supaya
+        // pasti terlihat kalau factory diam-diam menimpanya. Konsistensi
+        // store/kategori adalah tanggung jawab validasi request (T5/T7),
+        // bukan factory.
+        $product = Product::factory()->create([
+            'store_id' => $storeA->id,
+            'category_id' => $categoryOfStoreB->id,
+        ]);
+
+        $this->assertSame($categoryOfStoreB->id, $product->category_id);
+    }
+
+    public function test_category_factory_can_create_many_records_without_exhausting_the_name_pool(): void
+    {
+        $categories = Category::factory()->count(20)->create();
+
+        $this->assertCount(20, $categories);
     }
 
     public function test_product_sku_may_repeat_in_a_different_store(): void

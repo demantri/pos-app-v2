@@ -54,6 +54,9 @@ class Product extends Model
     }
 
     /**
+     * Bisa null: `category_id` nullable + nullOnDelete — menghapus kategori
+     * melepas pengelompokan produk, bukan menghapus produknya.
+     *
      * @return BelongsTo<Category, $this>
      */
     public function category(): BelongsTo

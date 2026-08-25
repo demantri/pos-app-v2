@@ -19,7 +19,7 @@ class ProductFactory extends Factory
      */
     public function definition(): array
     {
-        $name = fake()->unique()->randomElement([
+        $name = fake()->randomElement([
             'Kopi Susu Gula Aren', 'Teh Kotak Original', 'Air Mineral 600ml', 'Susu UHT Cokelat',
             'Roti Bakar Cokelat', 'Mie Instan Goreng', 'Nasi Ayam Geprek', 'Sereal Madu',
             'Keripik Kentang', 'Biskuit Kelapa', 'Wafer Vanila', 'Permen Mint',
@@ -30,10 +30,14 @@ class ProductFactory extends Factory
         ]);
 
         return [
-            // category() overrides both store_id dan category_id secara konsisten
-            // (lihat method di bawah) supaya kategori selalu milik toko yang sama.
             'store_id' => Store::factory(),
-            'category_id' => Category::factory(),
+            // Closure menerima atribut yang SUDAH ter-resolve (termasuk
+            // store_id di atas), jadi kategori yang dibuat otomatis selalu
+            // satu toko dengan produknya — tanpa hook yang diam-diam
+            // menimpa category_id eksplisit yang dioper pemanggil.
+            'category_id' => fn (array $attributes) => Category::factory()
+                ->create(['store_id' => $attributes['store_id']])
+                ->id,
             'name' => $name,
             'sku' => strtoupper(fake()->unique()->bothify('SKU-####??')),
             'barcode' => fake()->unique()->numerify('89910#########'),
@@ -54,28 +58,6 @@ class ProductFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'image_path' => 'products/'.fake()->uuid().'.jpg',
         ]);
-    }
-
-    /**
-     * Configure the factory so the resolved category always belongs to the
-     * same store as the product, instead of two unrelated random rows.
-     */
-    public function configure(): static
-    {
-        return $this->afterMaking(function (Product $product) {
-            if ($product->category === null || $product->category->store_id !== $product->store_id) {
-                $product->category()->associate(
-                    Category::factory()->create(['store_id' => $product->store_id])
-                );
-            }
-        })->afterCreating(function (Product $product) {
-            if ($product->category->store_id !== $product->store_id) {
-                $product->category()->associate(
-                    Category::factory()->create(['store_id' => $product->store_id])
-                );
-                $product->save();
-            }
-        });
     }
 
     /**

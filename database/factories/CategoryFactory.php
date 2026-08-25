@@ -18,7 +18,11 @@ class CategoryFactory extends Factory
      */
     public function definition(): array
     {
-        $name = fake()->unique()->randomElement([
+        // Tidak ->unique(): nama kategori TIDAK unik secara global di DB
+        // (hanya unique per (store_id, name)), dan kolam nilainya kecil —
+        // dipaksa unik global akan meledak begitu dipakai lebih dari
+        // sembilan kali (mis. Category::factory()->count(20)->create()).
+        $name = fake()->randomElement([
             'Minuman', 'Makanan', 'Snack', 'Rokok', 'Kebutuhan Rumah',
             'Perawatan Diri', 'Alat Tulis', 'Mainan', 'Obat',
         ]);

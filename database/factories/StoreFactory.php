@@ -17,7 +17,16 @@ class StoreFactory extends Factory
      */
     public function definition(): array
     {
-        $name = 'Toko '.fake()->unique()->city();
+        // fake()->city() menghasilkan nama kota Amerika/Eropa, bukan
+        // Indonesia — dipetakan manual di sini. Tidak ->unique(): nama toko
+        // tidak dibatasi unik di DB (hanya `code` yang unique), dan kolam
+        // nilainya kecil.
+        $city = fake()->randomElement([
+            'Jakarta', 'Bandung', 'Surabaya', 'Semarang', 'Yogyakarta',
+            'Tangerang', 'Bekasi', 'Depok', 'Bogor', 'Malang',
+            'Medan', 'Makassar', 'Denpasar', 'Solo', 'Cirebon',
+        ]);
+        $name = 'Toko '.$city;
 
         return [
             'name' => $name,

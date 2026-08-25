@@ -14,7 +14,11 @@ return new class extends Migration
         Schema::create('products', function (Blueprint $table) {
             $table->id();
             $table->foreignId('store_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('category_id')->constrained()->cascadeOnDelete();
+            // Nullable + nullOnDelete (bukan cascade): menghapus kategori TIDAK
+            // boleh ikut menghapus produknya — hanya melepas pengelompokannya.
+            // Itu janji yang sudah ditampilkan di UI konfirmasi hapus kategori
+            // sejak fase 1 (resources/js/pages/stores/categories/Index.vue).
+            $table->foreignId('category_id')->nullable()->constrained()->nullOnDelete();
             $table->string('name');
             $table->string('sku');
             $table->string('barcode')->nullable();
@@ -28,6 +32,9 @@ return new class extends Migration
             $table->timestamps();
 
             $table->unique(['store_id', 'sku']);
+            // Barcode tidak boleh ganda dalam satu toko. Nullable aman: MySQL
+            // mengizinkan banyak baris NULL dalam unique index.
+            $table->unique(['store_id', 'barcode']);
         });
     }
 

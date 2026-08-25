@@ -18,13 +18,17 @@ class User extends Authenticatable
     /**
      * The attributes that are mass assignable.
      *
+     * `is_owner` sengaja TIDAK dimasukkan — itu wewenang global untuk
+     * membuat toko baru, jadi harus disetel eksplisit
+     * (`$user->is_owner = true; $user->save();`), bukan lewat mass
+     * assignment dari input request.
+     *
      * @var list<string>
      */
     protected $fillable = [
         'name',
         'email',
         'password',
-        'is_owner',
     ];
 
     /**
