@@ -49,6 +49,21 @@ class ProductValidationTest extends TestCase
             ->assertSessionHasErrors(['price', 'stock']);
     }
 
+    public function test_product_fields_reject_values_longer_than_their_max_length(): void
+    {
+        $this->actingAs(User::factory()->create());
+
+        $payload = $this->validPayload();
+        $payload['name'] = str_repeat('a', 121);
+        $payload['sku'] = str_repeat('a', 41);
+        $payload['barcode'] = str_repeat('1', 41);
+        $payload['unit'] = str_repeat('a', 21);
+
+        $this->from(route('stores.products.index', ['store' => 1]))
+            ->post(route('stores.products.store', ['store' => 1]), $payload)
+            ->assertSessionHasErrors(['name', 'sku', 'barcode', 'unit']);
+    }
+
     public function test_valid_product_can_be_created_updated_and_deleted_in_demo_mode(): void
     {
         $this->actingAs(User::factory()->create());

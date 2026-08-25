@@ -40,6 +40,30 @@ class CheckoutTest extends TestCase
             ->assertSessionHasErrors('payment_method');
     }
 
+    public function test_checkout_rejects_negative_quantities_prices_and_amounts(): void
+    {
+        // CheckoutRequest tidak punya aturan `max:`; batas yang berlaku di sini
+        // adalah `min:` pada qty/price/discount/paid, jadi itu yang diuji.
+        $this->actingAs(User::factory()->create());
+
+        $this->from(route('stores.pos', ['store' => 1]))
+            ->post(route('stores.pos.checkout', ['store' => 1]), [
+                'items' => [
+                    ['product_id' => 1001, 'qty' => -1, 'price' => -12000, 'discount' => -500],
+                ],
+                'discount' => -1000,
+                'payment_method' => 'tunai',
+                'paid' => -50000,
+            ])
+            ->assertSessionHasErrors([
+                'items.0.qty',
+                'items.0.price',
+                'items.0.discount',
+                'discount',
+                'paid',
+            ]);
+    }
+
     public function test_checkout_accepts_a_valid_cart_in_demo_mode(): void
     {
         $this->actingAs(User::factory()->create());

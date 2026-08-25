@@ -72,8 +72,13 @@ const paymentLabel: Record<Transaction['payment_method'], string> = {
                             <TableRow
                                 v-for="transaction in transactions"
                                 :key="transaction.id"
+                                tabindex="0"
+                                role="button"
+                                :aria-label="`Detail transaksi ${transaction.number}`"
                                 class="cursor-pointer"
                                 @click="selected = transaction"
+                                @keydown.enter.prevent="selected = transaction"
+                                @keydown.space.prevent="selected = transaction"
                             >
                                 <TableCell class="font-medium">{{ transaction.number }}</TableCell>
                                 <TableCell>{{ formatDateTime(transaction.created_at) }}</TableCell>

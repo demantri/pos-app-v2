@@ -233,10 +233,20 @@ function confirmDelete(): void {
                                 </TableCell>
                                 <TableCell class="text-right">
                                     <div class="flex justify-end gap-1">
-                                        <Button variant="ghost" size="icon" @click="openEdit(product)">
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            :aria-label="`Ubah ${product.name}`"
+                                            @click="openEdit(product)"
+                                        >
                                             <Pencil class="size-4" />
                                         </Button>
-                                        <Button variant="ghost" size="icon" @click="deletingId = product.id">
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            :aria-label="`Hapus ${product.name}`"
+                                            @click="deletingId = product.id"
+                                        >
                                             <Trash2 class="size-4" />
                                         </Button>
                                     </div>

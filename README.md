@@ -1,25 +1,53 @@
-# Laravel + Vue Starter Kit
+# POS Multi-Toko
 
-## Introduction
+Template aplikasi kasir (POS) multi-toko: Laravel 12 + Inertia 2 + Vue 3 + shadcn-vue.
 
-Our Vue starter kit provides a robust, modern starting point for building Laravel applications with a Vue frontend using [Inertia](https://inertiajs.com).
+## Status
 
-Inertia allows you to build modern, single-page Vue applications using classic server-side routing and controllers. This lets you enjoy the frontend power of Vue combined with the incredible backend productivity of Laravel and lightning-fast Vite compilation.
+Fase 1 — template tampilan. Autentikasi berfungsi penuh (Fortify). Data toko,
+kategori, produk, transaksi, dan setting masih berasal dari `App\Support\DemoData`
+dan belum tersimpan ke database. Lihat:
 
-This Vue starter kit utilizes Vue 3 and the Composition API, TypeScript, Tailwind, and the [shadcn-vue](https://www.shadcn-vue.com) component library.
+- Desain: `docs/superpowers/specs/2026-08-24-multi-store-pos-template-design.md`
+- Rencana implementasi: `docs/superpowers/plans/2026-08-24-multi-store-pos-template.md`
 
-## Official Documentation
+## Menjalankan
 
-Documentation for all Laravel starter kits can be found on the [Laravel website](https://laravel.com/docs/starter-kits).
+```bash
+composer install
+npm install
+php artisan migrate
+composer run dev
+```
 
-## Contributing
+Database: MySQL. Aplikasi memakai `db_pos_v2`, test memakai `db_pos_v2_test`
+(lihat `phpunit.xml`). Mesin pengembangan ini tidak punya ekstensi `pdo_sqlite`.
 
-Thank you for considering contributing to our starter kit! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+Buat akun demo:
 
-## Code of Conduct
+```bash
+php artisan tinker --execute="\App\Models\User::factory()->create(['name' => 'Demo', 'email' => 'demo@pos.test']);"
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+Password default factory: `password`.
 
-## License
+## Peta halaman
 
-The Laravel + Vue starter kit is open-sourced software licensed under the MIT license.
+| URL | Isi |
+|---|---|
+| `/stores` | Daftar toko |
+| `/stores/{id}` | Dashboard toko |
+| `/stores/{id}/pos` | Layar kasir |
+| `/stores/{id}/products` | Master produk |
+| `/stores/{id}/categories` | Jenis / kategori |
+| `/stores/{id}/transactions` | Riwayat transaksi |
+| `/stores/{id}/settings` | Setting toko |
+
+## Verifikasi
+
+```bash
+php artisan test
+vendor/bin/pint --test
+npm run check
+npm run build
+```

@@ -69,6 +69,32 @@ class SettingValidationTest extends TestCase
             ->assertSessionHasErrors('tax_percent');
     }
 
+    public function test_setting_fields_reject_values_longer_than_their_max_length(): void
+    {
+        $this->actingAs(User::factory()->create());
+
+        $payload = $this->validPayload();
+        $payload['name'] = str_repeat('a', 101);
+        $payload['code'] = str_repeat('a', 11);
+        $payload['address'] = str_repeat('a', 256);
+        $payload['phone'] = str_repeat('1', 31);
+        $payload['currency'] = str_repeat('A', 6);
+        $payload['receipt_header'] = str_repeat('a', 121);
+        $payload['receipt_footer'] = str_repeat('a', 121);
+
+        $this->from(route('stores.settings.edit', ['store' => 1]))
+            ->put(route('stores.settings.update', ['store' => 1]), $payload)
+            ->assertSessionHasErrors([
+                'name',
+                'code',
+                'address',
+                'phone',
+                'currency',
+                'receipt_header',
+                'receipt_footer',
+            ]);
+    }
+
     public function test_valid_settings_return_demo_flash(): void
     {
         $this->actingAs(User::factory()->create());

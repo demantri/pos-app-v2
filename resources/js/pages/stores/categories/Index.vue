@@ -141,12 +141,18 @@ function confirmDelete(): void {
                                 <TableCell class="text-right">{{ category.products_count }}</TableCell>
                                 <TableCell class="text-right">
                                     <div class="flex justify-end gap-1">
-                                        <Button variant="ghost" size="icon" @click="openEdit(category)">
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            :aria-label="`Ubah ${category.name}`"
+                                            @click="openEdit(category)"
+                                        >
                                             <Pencil class="size-4" />
                                         </Button>
                                         <Button
                                             variant="ghost"
                                             size="icon"
+                                            :aria-label="`Hapus ${category.name}`"
                                             @click="deletingId = category.id"
                                         >
                                             <Trash2 class="size-4" />

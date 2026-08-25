@@ -19,6 +19,18 @@ class CategoryValidationTest extends TestCase
             ->assertSessionHasErrors('name');
     }
 
+    public function test_category_fields_reject_values_longer_than_their_max_length(): void
+    {
+        $this->actingAs(User::factory()->create());
+
+        $this->from(route('stores.categories.index', ['store' => 1]))
+            ->post(route('stores.categories.store', ['store' => 1]), [
+                'name' => str_repeat('a', 61),
+                'description' => str_repeat('a', 256),
+            ])
+            ->assertSessionHasErrors(['name', 'description']);
+    }
+
     public function test_category_can_be_submitted_and_updated_in_demo_mode(): void
     {
         $this->actingAs(User::factory()->create());
