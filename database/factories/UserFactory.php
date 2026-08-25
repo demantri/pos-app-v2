@@ -33,7 +33,19 @@ class UserFactory extends Factory
             'two_factor_secret' => null,
             'two_factor_recovery_codes' => null,
             'two_factor_confirmed_at' => null,
+            'is_owner' => false,
         ];
+    }
+
+    /**
+     * Indicate that the user holds the global authority to create new
+     * stores (and their settings).
+     */
+    public function owner(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'is_owner' => true,
+        ]);
     }
 
     /**
