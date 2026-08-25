@@ -116,10 +116,15 @@
         // "skipDefaultLibCheck": true,                      /* Skip type checking .d.ts files that are included with TypeScript. */
         "skipLibCheck": true /* Skip type checking all .d.ts files. */
     },
+    "vueCompilerOptions": {
+        "strictTemplates": true,
+        "fallthroughAttributes": true,
+        "dataAttributes": ["data-*"]
+    },
     "include": [
         "resources/js/**/*.ts",
         "resources/js/**/*.d.ts",
-        "resources/js/**/*.tsx", 
+        "resources/js/**/*.tsx",
         "resources/js/**/*.vue"
     ]
 }

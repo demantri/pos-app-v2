@@ -35,9 +35,7 @@ const delegatedProps = reactiveOmit(props, "tooltip")
       </SidebarMenuButtonChild>
     </TooltipTrigger>
     <TooltipContent
-      side="right"
-      align="center"
-      :hidden="state !== 'collapsed' || isMobile"
+      v-bind="{ side: 'right', align: 'center', hidden: state !== 'collapsed' || isMobile }"
     >
       <template v-if="typeof tooltip === 'string'">
         {{ tooltip }}

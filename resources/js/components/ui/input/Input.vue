@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import type { HTMLAttributes } from "vue"
 import { useVModel } from "@vueuse/core"
-import { ref } from "vue"
+import { computed, ref } from "vue"
 import { cn } from "@/lib/utils"
 
 const props = defineProps<{
   defaultValue?: string | number
   modelValue?: string | number
+  modelModifiers?: { number?: boolean, trim?: boolean }
   class?: HTMLAttributes["class"]
 }>()
 
@@ -14,9 +15,31 @@ const emits = defineEmits<{
   (e: "update:modelValue", payload: string | number): void
 }>()
 
-const modelValue = useVModel(props, "modelValue", emits, {
+const rawModelValue = useVModel(props, "modelValue", emits, {
   passive: true,
   defaultValue: props.defaultValue,
+})
+
+// Native `v-model` modifiers (`.number`, `.trim`) only work out of the box on
+// plain elements. Since this component owns the `v-model` binding on the
+// inner `<input>`, we have to re-implement them ourselves, mirroring Vue's
+// own `.number`/`.trim` semantics (see `@vue/shared`'s `toNumber`), or
+// callers using `v-model.number`/`v-model.trim` on `<Input>` would silently
+// keep receiving raw strings instead of the converted value.
+const modelValue = computed({
+  get: () => rawModelValue.value,
+  set: (value) => {
+    if (typeof value === "string") {
+      if (props.modelModifiers?.trim) {
+        value = value.trim()
+      }
+      if (props.modelModifiers?.number) {
+        const parsed = Number(value)
+        value = Number.isNaN(parsed) ? value : parsed
+      }
+    }
+    rawModelValue.value = value
+  },
 })
 
 const inputRef = ref<HTMLInputElement | null>(null)

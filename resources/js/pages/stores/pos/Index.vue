@@ -2,7 +2,7 @@
 import { Head, router, usePage } from '@inertiajs/vue3';
 import { useEventListener } from '@vueuse/core';
 import { Minus, Plus, Receipt, Search, Trash2 } from 'lucide-vue-next';
-import { computed, ref } from 'vue';
+import { computed, ref, withKeys, withModifiers } from 'vue';
 import { toast } from 'vue-sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -238,7 +238,7 @@ useEventListener(window, 'keydown', (event: KeyboardEvent) => {
                         class="h-12 pl-10 text-base"
                         placeholder="Cari produk atau scan barcode…"
                         autofocus
-                        @keydown.enter.prevent="handleScan"
+                        v-on="{ keydown: withKeys(withModifiers(handleScan, ['prevent']), ['enter']) }"
                     />
                 </div>
 
