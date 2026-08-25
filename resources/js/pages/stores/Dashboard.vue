@@ -16,12 +16,13 @@ import {
 import AppLayout from '@/layouts/AppLayout.vue';
 import { formatDateTime, formatRupiah } from '@/lib/format';
 import { storePath } from '@/lib/store-path';
-import type { BreadcrumbItem, DashboardStats, Store } from '@/types';
+import type { BreadcrumbItem, DashboardStats } from '@/types';
 
 const props = defineProps<{ stats: DashboardStats }>();
 
 const page = usePage();
-const currentStore = computed(() => page.props.currentStore as Store);
+// Halaman ini hanya dirender di bawah middleware `resolve.store`, jadi currentStore selalu ada.
+const currentStore = computed(() => page.props.currentStore!);
 
 const breadcrumbs = computed<BreadcrumbItem[]>(() => [
     { title: 'Daftar Toko', href: '/stores' },

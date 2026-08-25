@@ -12,12 +12,12 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { SidebarMenuButton } from '@/components/ui/sidebar';
 import { storePath } from '@/lib/store-path';
-import type { Store, StoreOption } from '@/types';
+import type { StoreOption } from '@/types';
 
 const page = usePage();
 
-const currentStore = computed(() => page.props.currentStore as Store | null);
-const storeOptions = computed(() => (page.props.storeOptions ?? []) as StoreOption[]);
+const currentStore = computed(() => page.props.currentStore);
+const storeOptions = computed(() => page.props.storeOptions);
 
 /**
  * Sisa URL setelah `/stores/{id}` — dipakai agar perpindahan toko

@@ -23,12 +23,13 @@ import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/AppLayout.vue';
 import { storePath } from '@/lib/store-path';
-import type { BreadcrumbItem, Store, StoreSettings } from '@/types';
+import type { BreadcrumbItem, StoreSettings } from '@/types';
 
 const props = defineProps<{ settings: StoreSettings }>();
 
 const page = usePage();
-const currentStore = computed(() => page.props.currentStore as Store);
+// Halaman ini hanya dirender di bawah middleware `resolve.store`, jadi currentStore selalu ada.
+const currentStore = computed(() => page.props.currentStore!);
 
 const breadcrumbs = computed<BreadcrumbItem[]>(() => [
     { title: currentStore.value.name, href: storePath(currentStore.value.id) },

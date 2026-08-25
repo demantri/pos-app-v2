@@ -7,6 +7,16 @@ use Illuminate\Foundation\Http\FormRequest;
 class ProductRequest extends FormRequest
 {
     /**
+     * PERINGATAN UNTUK FASE 2 (persistensi produk):
+     *
+     * `category_id` di bawah ini hanya divalidasi sebagai `integer`, tanpa
+     * `exists:categories,id` maupun scoping ke toko yang sedang di-resolve.
+     * Endpoint ini saat ini tidak menyimpan apa pun, jadi masih inert — tapi
+     * begitu fase 2 menyimpan produk, tambahkan aturan yang memastikan
+     * `category_id` benar-benar ada DAN milik toko yang sama dengan produk
+     * yang sedang dibuat/diubah, supaya tidak bisa menautkan produk toko A ke
+     * kategori milik toko B.
+     *
      * @return array<string, mixed>
      */
     public function rules(): array

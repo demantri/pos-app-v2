@@ -1,4 +1,5 @@
 import type { Auth } from '@/types/auth';
+import type { Store, StoreOption } from '@/types/pos';
 
 // Extend ImportMeta interface for Vite...
 declare module 'vite/client' {
@@ -19,6 +20,9 @@ declare module '@inertiajs/core' {
             name: string;
             auth: Auth;
             sidebarOpen: boolean;
+            currentStore: Store | null;
+            storeOptions: StoreOption[];
+            flash: { success: string | null; error: string | null };
             [key: string]: unknown;
         };
     }

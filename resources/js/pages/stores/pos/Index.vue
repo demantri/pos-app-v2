@@ -3,6 +3,7 @@ import { Head, router, usePage } from '@inertiajs/vue3';
 import { useEventListener } from '@vueuse/core';
 import { Minus, Plus, Receipt, Search, Trash2 } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
+import { toast } from 'vue-sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -25,7 +26,7 @@ import PosLayout from '@/layouts/PosLayout.vue';
 import { changeFor, lineSubtotal } from '@/lib/cart';
 import { formatRupiah } from '@/lib/format';
 import { storePath } from '@/lib/store-path';
-import type { BreadcrumbItem, Category, PaymentMethod, Product, Store, StoreSettings } from '@/types';
+import type { BreadcrumbItem, Category, PaymentMethod, Product, StoreSettings } from '@/types';
 
 const props = defineProps<{
     products: Product[];
@@ -34,7 +35,8 @@ const props = defineProps<{
 }>();
 
 const page = usePage();
-const currentStore = computed(() => page.props.currentStore as Store);
+// Halaman ini hanya dirender di bawah middleware `resolve.store`, jadi currentStore selalu ada.
+const currentStore = computed(() => page.props.currentStore!);
 
 const breadcrumbs = computed<BreadcrumbItem[]>(() => [
     { title: currentStore.value.name, href: storePath(currentStore.value.id) },
@@ -53,6 +55,11 @@ const searchInput = ref<HTMLInputElement | null>(null);
 const payDialogOpen = ref(false);
 const receiptDialogOpen = ref(false);
 const discountDialogOpen = ref(false);
+const anyDialogOpen = computed(
+    () => payDialogOpen.value || receiptDialogOpen.value || discountDialogOpen.value,
+);
+
+const posting = ref(false);
 
 const paymentMethod = ref<PaymentMethod>('tunai');
 const paid = ref(0);
@@ -128,6 +135,12 @@ function handleScan(): void {
 }
 
 function submitPayment(): void {
+    if (posting.value) {
+        return;
+    }
+
+    posting.value = true;
+
     router.post(
         storePath(currentStore.value.id, 'pos/checkout'),
         {
@@ -147,6 +160,13 @@ function submitPayment(): void {
             onSuccess: () => {
                 payDialogOpen.value = false;
                 receiptDialogOpen.value = true;
+            },
+            onError: (errors) => {
+                const message = Object.values(errors)[0] ?? 'Gagal menyelesaikan pembayaran. Silakan coba lagi.';
+                toast.error(message);
+            },
+            onFinish: () => {
+                posting.value = false;
             },
         },
     );
@@ -175,15 +195,30 @@ function onReceiptCloseAutoFocus(event: Event): void {
 useEventListener(window, 'keydown', (event: KeyboardEvent) => {
     if (event.key === 'F2') {
         event.preventDefault();
+
+        // Cegah F2 menumpuk/mereset dialog bayar saat ada dialog lain (termasuk
+        // dialog bayar itu sendiri atau struk) yang sedang terbuka — lihat catatan
+        // di openPayDialog(): membuka ulang menimpa nominal `paid` yang sedang diketik
+        // dan bisa membuka dialog bayar di atas struk transaksi yang belum di-clear.
+        if (anyDialogOpen.value) {
+            return;
+        }
+
         openPayDialog();
     }
 
     if (event.key === 'F4') {
         event.preventDefault();
+
+        // Sama seperti F2: jangan menumpuk dialog diskon di atas dialog lain yang terbuka.
+        if (anyDialogOpen.value) {
+            return;
+        }
+
         openDiscountDialog();
     }
 
-    if (event.key === 'Escape' && ! payDialogOpen.value && ! receiptDialogOpen.value) {
+    if (event.key === 'Escape' && ! anyDialogOpen.value) {
         search.value = '';
     }
 });
@@ -378,7 +413,7 @@ useEventListener(window, 'keydown', (event: KeyboardEvent) => {
 
                 <DialogFooter>
                     <Button variant="outline" @click="payDialogOpen = false">Batal</Button>
-                    <Button :disabled="paid < cart.totals.value.total" @click="submitPayment">
+                    <Button :disabled="posting || paid < cart.totals.value.total" @click="submitPayment">
                         Selesaikan
                     </Button>
                 </DialogFooter>

@@ -3,12 +3,10 @@ import { usePage } from '@inertiajs/vue3';
 import { watch } from 'vue';
 import { toast } from 'vue-sonner';
 
-type Flash = { success: string | null; error: string | null };
-
 const page = usePage();
 
 watch(
-    () => page.props.flash as Flash | undefined,
+    () => page.props.flash,
     (flash) => {
         if (flash?.success) {
             toast.success(flash.success);

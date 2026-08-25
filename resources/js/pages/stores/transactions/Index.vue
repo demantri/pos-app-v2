@@ -22,12 +22,13 @@ import {
 import AppLayout from '@/layouts/AppLayout.vue';
 import { formatDateTime, formatRupiah } from '@/lib/format';
 import { storePath } from '@/lib/store-path';
-import type { BreadcrumbItem, Store, Transaction } from '@/types';
+import type { BreadcrumbItem, Transaction } from '@/types';
 
 defineProps<{ transactions: Transaction[] }>();
 
 const page = usePage();
-const currentStore = computed(() => page.props.currentStore as Store);
+// Halaman ini hanya dirender di bawah middleware `resolve.store`, jadi currentStore selalu ada.
+const currentStore = computed(() => page.props.currentStore!);
 
 const breadcrumbs = computed<BreadcrumbItem[]>(() => [
     { title: currentStore.value.name, href: storePath(currentStore.value.id) },

@@ -22,11 +22,11 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { storePath } from '@/lib/store-path';
-import type { NavItem, Store } from '@/types';
+import type { NavItem } from '@/types';
 
 const page = usePage();
 
-const currentStore = computed(() => page.props.currentStore as Store | null);
+const currentStore = computed(() => page.props.currentStore);
 
 const mainNavItems = computed<NavItem[]>(() => {
     const store = currentStore.value;
