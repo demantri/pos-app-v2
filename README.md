@@ -51,3 +51,4 @@ vendor/bin/pint --test
 npm run check
 npm run build
 ```
+# pos-app-v2
