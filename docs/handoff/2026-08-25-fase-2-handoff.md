@@ -8,7 +8,7 @@ sama bila butuh alasan di balik tiap keputusan.
 
 ## 1. Posisi saat ini
 
-- **Branch kerja:** `feature/pos-database` (dicabang dari `master`)
+- **Branch kerja:** `main` (dulu bernama `feature/pos-database`, di-rename di luar sesi; dicabang dari `master`)
 - **`master`:** sudah memuat fase 1 lengkap (merge commit `a2e2234`)
 - **Fase 1:** SELESAI — template tampilan POS multi-toko, 14 task, seluruhnya ter-review.
   Data dari `App\Support\DemoData` (statis), endpoint tulis hanya memvalidasi lalu
@@ -207,7 +207,7 @@ satu klik manusia.
 
 ```bash
 cd /home/demantri/projects/laravel/pos-app-v2
-git checkout feature/pos-database
+git checkout main
 git log --oneline -5
 
 # lanjutkan dari §4: verifikasi seeder WIP
