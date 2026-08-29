@@ -50,8 +50,8 @@ const breadcrumbs = computed<BreadcrumbItem[]>(() => [
 ]);
 
 const dialogOpen = ref(false);
-const editingId = ref<number | null>(null);
-const deletingId = ref<number | null>(null);
+const editingId = ref<string | null>(null);
+const deletingId = ref<string | null>(null);
 
 const form = useForm({
     name: '',

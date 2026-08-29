@@ -32,10 +32,10 @@ class StoreContextTest extends TestCase
         $store = Store::factory()->create(['name' => 'Toko Kelapa Dua']);
         $this->actingAs($this->storeAdmin($store));
 
-        $this->get(route('stores.show', ['store' => $store->id]))
+        $this->get(route('stores.show', ['store' => $store]))
             ->assertOk()
             ->assertInertia(fn (AssertableInertia $page) => $page
-                ->where('currentStore.id', $store->id)
+                ->where('currentStore.id', $store->ulid)
                 ->where('currentStore.name', 'Toko Kelapa Dua'),
             );
     }

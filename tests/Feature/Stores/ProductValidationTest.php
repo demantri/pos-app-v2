@@ -15,13 +15,14 @@ class ProductValidationTest extends TestCase
     /**
      * @return array<string, mixed>
      */
-    private function validPayload(?int $categoryId = null): array
+    private function validPayload(?string $categoryUlid = null): array
     {
         return [
             'name' => 'Kopi Susu Gula Aren',
             'sku' => 'SDR-999',
             'barcode' => '8991000000999',
-            'category_id' => $categoryId ?? 101,
+            // ULID kategori, bukan primary key — itu yang dikenal klien.
+            'category_id' => $categoryUlid ?? 'KATEGORI-TIDAK-ADA',
             'price' => 12000,
             'stock' => 25,
             'min_stock' => 5,
@@ -35,8 +36,8 @@ class ProductValidationTest extends TestCase
         $store = Store::factory()->create();
         $this->actingAs($this->storeAdmin($store));
 
-        $this->from(route('stores.products.index', ['store' => $store->id]))
-            ->post(route('stores.products.store', ['store' => $store->id]), [])
+        $this->from(route('stores.products.index', ['store' => $store]))
+            ->post(route('stores.products.store', ['store' => $store]), [])
             ->assertSessionHasErrors(['name', 'sku', 'category_id', 'price', 'stock', 'min_stock', 'unit', 'is_active']);
     }
 
@@ -49,8 +50,8 @@ class ProductValidationTest extends TestCase
         $payload['price'] = -1;
         $payload['stock'] = -5;
 
-        $this->from(route('stores.products.index', ['store' => $store->id]))
-            ->post(route('stores.products.store', ['store' => $store->id]), $payload)
+        $this->from(route('stores.products.index', ['store' => $store]))
+            ->post(route('stores.products.store', ['store' => $store]), $payload)
             ->assertSessionHasErrors(['price', 'stock']);
     }
 
@@ -65,8 +66,8 @@ class ProductValidationTest extends TestCase
         $payload['barcode'] = str_repeat('1', 41);
         $payload['unit'] = str_repeat('a', 21);
 
-        $this->from(route('stores.products.index', ['store' => $store->id]))
-            ->post(route('stores.products.store', ['store' => $store->id]), $payload)
+        $this->from(route('stores.products.index', ['store' => $store]))
+            ->post(route('stores.products.store', ['store' => $store]), $payload)
             ->assertSessionHasErrors(['name', 'sku', 'barcode', 'unit']);
     }
 
@@ -75,10 +76,10 @@ class ProductValidationTest extends TestCase
         $store = Store::factory()->create();
         $this->actingAs($this->storeAdmin($store));
         $category = Category::factory()->create(['store_id' => $store->id]);
-        $from = route('stores.products.index', ['store' => $store->id]);
+        $from = route('stores.products.index', ['store' => $store]);
 
         $this->from($from)
-            ->post(route('stores.products.store', ['store' => $store->id]), $this->validPayload($category->id))
+            ->post(route('stores.products.store', ['store' => $store]), $this->validPayload($category->ulid))
             ->assertSessionHas('success');
 
         $this->assertDatabaseHas('products', [
@@ -94,8 +95,8 @@ class ProductValidationTest extends TestCase
         $product = Product::query()->where('store_id', $store->id)->where('sku', 'SDR-999')->firstOrFail();
 
         $this->from($from)
-            ->put(route('stores.products.update', ['store' => $store->id, 'product' => $product->id]), [
-                ...$this->validPayload($category->id),
+            ->put(route('stores.products.update', ['store' => $store, 'product' => $product]), [
+                ...$this->validPayload($category->ulid),
                 'name' => 'Kopi Susu Aren Baru',
                 'price' => 15000,
             ])
@@ -108,7 +109,7 @@ class ProductValidationTest extends TestCase
         ]);
 
         $this->from($from)
-            ->delete(route('stores.products.destroy', ['store' => $store->id, 'product' => $product->id]))
+            ->delete(route('stores.products.destroy', ['store' => $store, 'product' => $product]))
             ->assertSessionHas('success');
 
         $this->assertDatabaseMissing('products', ['id' => $product->id]);
@@ -121,8 +122,8 @@ class ProductValidationTest extends TestCase
         $otherStore = Store::factory()->create();
         $foreign = Product::factory()->create(['store_id' => $otherStore->id]);
 
-        $this->from(route('stores.products.index', ['store' => $store->id]))
-            ->delete(route('stores.products.destroy', ['store' => $store->id, 'product' => $foreign->id]))
+        $this->from(route('stores.products.index', ['store' => $store]))
+            ->delete(route('stores.products.destroy', ['store' => $store, 'product' => $foreign]))
             ->assertNotFound();
 
         $this->assertDatabaseHas('products', ['id' => $foreign->id]);

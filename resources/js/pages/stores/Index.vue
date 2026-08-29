@@ -68,7 +68,7 @@ function entryPath(store: Store): string {
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Daftar Toko', href: '/stores' }];
 
 const dialogOpen = ref(false);
-const editingId = ref<number | null>(null);
+const editingId = ref<string | null>(null);
 const archiving = ref<Store | null>(null);
 
 const form = useForm({

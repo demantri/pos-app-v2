@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Store;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Store\ProductRequest;
+use App\Models\Category;
 use App\Models\Product;
 use App\Models\Store;
 use App\Support\ProductImage;
@@ -77,8 +78,17 @@ class ProductController extends Controller
      */
     private function attributes(ProductRequest $request): array
     {
-        return collect($request->validated())
+        $attributes = collect($request->validated())
             ->except(['image', 'remove_image'])
             ->all();
+
+        // `category_id` datang sebagai ULID (itu yang dikenal klien),
+        // sedangkan kolomnya adalah foreign key integer. Keberadaan dan
+        // kepemilikannya sudah dijamin aturan `exists` di ProductRequest.
+        $attributes['category_id'] = Category::query()
+            ->where('ulid', $attributes['category_id'])
+            ->value('id');
+
+        return $attributes;
     }
 }

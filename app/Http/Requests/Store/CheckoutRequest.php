@@ -32,8 +32,8 @@ class CheckoutRequest extends FormRequest
             'items' => ['required', 'array', 'min:1'],
             'items.*.product_id' => [
                 'required',
-                'integer',
-                Rule::exists('products', 'id')->where('store_id', $storeId),
+                'string',
+                Rule::exists('products', 'ulid')->where('store_id', $storeId),
             ],
             'items.*.qty' => ['required', 'integer', 'min:1'],
             'items.*.price' => ['required', 'integer', 'min:0'],

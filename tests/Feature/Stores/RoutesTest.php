@@ -38,7 +38,7 @@ class RoutesTest extends TestCase
         // Admin toko, bukan owner: sejak fase 3 owner tidak boleh membuka isi toko.
         $this->actingAs($this->storeAdmin($store));
 
-        $response = $this->get(route($routeName, ['store' => $store->id]));
+        $response = $this->get(route($routeName, ['store' => $store]));
 
         $response->assertOk()->assertInertia(function (AssertableInertia $page) use ($component, $props) {
             $page->component($component);
@@ -59,7 +59,7 @@ class RoutesTest extends TestCase
     {
         $store = Store::factory()->create();
 
-        $this->get(route($routeName, ['store' => $store->id]))->assertRedirect(route('login'));
+        $this->get(route($routeName, ['store' => $store]))->assertRedirect(route('login'));
     }
 
     /**

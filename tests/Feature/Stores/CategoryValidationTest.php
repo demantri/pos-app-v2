@@ -17,8 +17,8 @@ class CategoryValidationTest extends TestCase
         $store = Store::factory()->create();
         $this->actingAs($this->storeAdmin($store));
 
-        $this->from(route('stores.categories.index', ['store' => $store->id]))
-            ->post(route('stores.categories.store', ['store' => $store->id]), ['description' => 'tanpa nama'])
+        $this->from(route('stores.categories.index', ['store' => $store]))
+            ->post(route('stores.categories.store', ['store' => $store]), ['description' => 'tanpa nama'])
             ->assertSessionHasErrors('name');
     }
 
@@ -27,8 +27,8 @@ class CategoryValidationTest extends TestCase
         $store = Store::factory()->create();
         $this->actingAs($this->storeAdmin($store));
 
-        $this->from(route('stores.categories.index', ['store' => $store->id]))
-            ->post(route('stores.categories.store', ['store' => $store->id]), [
+        $this->from(route('stores.categories.index', ['store' => $store]))
+            ->post(route('stores.categories.store', ['store' => $store]), [
                 'name' => str_repeat('a', 61),
                 'description' => str_repeat('a', 256),
             ])
@@ -39,10 +39,10 @@ class CategoryValidationTest extends TestCase
     {
         $store = Store::factory()->create();
         $this->actingAs($this->storeAdmin($store));
-        $index = route('stores.categories.index', ['store' => $store->id]);
+        $index = route('stores.categories.index', ['store' => $store]);
 
         $this->from($index)
-            ->post(route('stores.categories.store', ['store' => $store->id]), [
+            ->post(route('stores.categories.store', ['store' => $store]), [
                 'name' => 'Kategori Baru',
                 'description' => 'Contoh',
             ])
@@ -57,7 +57,7 @@ class CategoryValidationTest extends TestCase
         $category = Category::query()->where('store_id', $store->id)->where('name', 'Kategori Baru')->firstOrFail();
 
         $this->from($index)
-            ->put(route('stores.categories.update', ['store' => $store->id, 'category' => $category->id]), [
+            ->put(route('stores.categories.update', ['store' => $store, 'category' => $category]), [
                 'name' => 'Kategori Diubah',
                 'description' => null,
             ])
@@ -66,7 +66,7 @@ class CategoryValidationTest extends TestCase
         $this->assertDatabaseHas('categories', ['id' => $category->id, 'name' => 'Kategori Diubah']);
 
         $this->from($index)
-            ->delete(route('stores.categories.destroy', ['store' => $store->id, 'category' => $category->id]))
+            ->delete(route('stores.categories.destroy', ['store' => $store, 'category' => $category]))
             ->assertSessionHas('success');
 
         $this->assertDatabaseMissing('categories', ['id' => $category->id]);
@@ -82,8 +82,8 @@ class CategoryValidationTest extends TestCase
             'category_id' => $category->id,
         ]);
 
-        $this->from(route('stores.categories.index', ['store' => $store->id]))
-            ->delete(route('stores.categories.destroy', ['store' => $store->id, 'category' => $category->id]))
+        $this->from(route('stores.categories.index', ['store' => $store]))
+            ->delete(route('stores.categories.destroy', ['store' => $store, 'category' => $category]))
             ->assertSessionHas('success');
 
         $this->assertDatabaseHas('products', ['id' => $product->id, 'category_id' => null]);

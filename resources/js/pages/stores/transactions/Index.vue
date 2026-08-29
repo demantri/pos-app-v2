@@ -39,7 +39,7 @@ const breadcrumbs = computed<BreadcrumbItem[]>(() => [
 
 const selected = ref<Transaction | null>(null);
 
-const printingId = ref<number | null>(null);
+const printingId = ref<string | null>(null);
 
 /**
  * Cetak ulang nota lama ke printer toko. Baris tabelnya sendiri membuka

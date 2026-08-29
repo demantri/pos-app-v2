@@ -37,8 +37,11 @@ class EntryPointController extends Controller
         $store = $stores->first();
 
         // Kasir tidak boleh membuka dashboard toko, jadi tujuannya layar POS.
+        // Modelnya dioper apa adanya supaya route() memakai getRouteKey()
+        // (ULID); mengoper $store->id akan menghasilkan URL id berurut yang
+        // sudah tidak dikenali lagi.
         return $user->isCashierOf($store)
-            ? redirect()->route('stores.pos', ['store' => $store->id])
-            : redirect()->route('stores.show', ['store' => $store->id]);
+            ? redirect()->route('stores.pos', ['store' => $store])
+            : redirect()->route('stores.show', ['store' => $store]);
     }
 }

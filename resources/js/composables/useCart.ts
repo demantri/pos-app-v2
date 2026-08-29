@@ -15,10 +15,10 @@ export function useCart(options: UseCartOptions): {
     totals: Ref<CartTotals>;
     itemCount: Ref<number>;
     addProduct: (product: Product) => void;
-    increase: (productId: number) => void;
-    decrease: (productId: number) => void;
-    remove: (productId: number) => void;
-    setItemDiscount: (productId: number, value: number) => void;
+    increase: (productId: string) => void;
+    decrease: (productId: string) => void;
+    remove: (productId: string) => void;
+    setItemDiscount: (productId: string, value: number) => void;
     clear: () => void;
 } {
     const items = ref<CartItem[]>([]);
@@ -36,7 +36,7 @@ export function useCart(options: UseCartOptions): {
         items.value.reduce((sum, item) => sum + item.qty, 0),
     );
 
-    function find(productId: number): CartItem | undefined {
+    function find(productId: string): CartItem | undefined {
         return items.value.find((item) => item.product_id === productId);
     }
 
@@ -58,7 +58,7 @@ export function useCart(options: UseCartOptions): {
         });
     }
 
-    function increase(productId: number): void {
+    function increase(productId: string): void {
         const item = find(productId);
 
         if (item) {
@@ -66,7 +66,7 @@ export function useCart(options: UseCartOptions): {
         }
     }
 
-    function decrease(productId: number): void {
+    function decrease(productId: string): void {
         const item = find(productId);
 
         if (!item) {
@@ -82,13 +82,13 @@ export function useCart(options: UseCartOptions): {
         item.qty -= 1;
     }
 
-    function remove(productId: number): void {
+    function remove(productId: string): void {
         items.value = items.value.filter(
             (item) => item.product_id !== productId,
         );
     }
 
-    function setItemDiscount(productId: number, value: number): void {
+    function setItemDiscount(productId: string, value: number): void {
         const item = find(productId);
 
         if (item) {

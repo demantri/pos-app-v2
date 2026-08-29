@@ -5,7 +5,8 @@
 export type StoreRole = 'owner' | 'admin' | 'kasir';
 
 export type Store = {
-    id: number;
+    // ULID, bukan primary key berurut — dipakai apa adanya di URL.
+    id: string;
     name: string;
     code: string;
     address: string;
@@ -19,7 +20,7 @@ export type Store = {
 };
 
 export type StoreUser = {
-    id: number;
+    id: string;
     name: string;
     email: string;
     role: 'admin' | 'kasir' | null;
@@ -40,26 +41,27 @@ export type Permissions = {
 };
 
 export type StoreOption = {
-    id: number;
+    id: string;
     name: string;
     code: string;
 };
 
 export type Category = {
-    id: number;
+    id: string;
     name: string;
     description: string;
     products_count: number;
 };
 
 export type Product = {
-    id: number;
+    id: string;
     name: string;
     sku: string;
     barcode: string;
-    // null bila kategorinya sudah dihapus — `category_id` nullable + nullOnDelete
-    // di database. `category` tetap string: server mengirim 'Tanpa kategori'.
-    category_id: number | null;
+    // ULID kategori; null bila kategorinya sudah dihapus (`category_id`
+    // nullable + nullOnDelete). `category` tetap string: server mengirim
+    // 'Tanpa kategori'.
+    category_id: string | null;
     category: string;
     price: number;
     stock: number;
@@ -82,7 +84,7 @@ export type TransactionItem = {
 };
 
 export type Transaction = {
-    id: number;
+    id: string;
     number: string;
     created_at: string;
     cashier: string;
@@ -123,12 +125,12 @@ export type PrinterConnector = 'none' | 'cups' | 'file' | 'bluetooth';
  * Transaksi yang baru saja tersimpan, dikirim lewat flash oleh checkout.
  */
 export type ReceiptFlash = {
-    id: number;
+    id: string;
     number: string;
 };
 
 export type LowStockProduct = {
-    id: number;
+    id: string;
     name: string;
     stock: number;
     min_stock: number;
@@ -146,7 +148,7 @@ export type DashboardStats = {
 };
 
 export type CartItem = {
-    product_id: number;
+    product_id: string;
     name: string;
     price: number;
     qty: number;

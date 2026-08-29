@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Concerns\HasUlidRouteKey;
 use Database\Factories\StoreFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -12,7 +13,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Store extends Model
 {
     /** @use HasFactory<StoreFactory> */
-    use HasFactory, SoftDeletes;
+    use HasFactory, HasUlidRouteKey, SoftDeletes;
 
     /**
      * The attributes that are mass assignable.

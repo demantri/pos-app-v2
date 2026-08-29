@@ -42,8 +42,8 @@ class SettingValidationTest extends TestCase
         $payload = $this->validPayload();
         $payload['paper_size'] = 'A4';
 
-        $this->from(route('stores.settings.edit', ['store' => $store->id]))
-            ->put(route('stores.settings.update', ['store' => $store->id]), $payload)
+        $this->from(route('stores.settings.edit', ['store' => $store]))
+            ->put(route('stores.settings.update', ['store' => $store]), $payload)
             ->assertSessionHasErrors('paper_size');
     }
 
@@ -56,8 +56,8 @@ class SettingValidationTest extends TestCase
         $payload['open_time'] = '8 pagi';
         $payload['close_time'] = '';
 
-        $this->from(route('stores.settings.edit', ['store' => $store->id]))
-            ->put(route('stores.settings.update', ['store' => $store->id]), $payload)
+        $this->from(route('stores.settings.edit', ['store' => $store]))
+            ->put(route('stores.settings.update', ['store' => $store]), $payload)
             ->assertSessionHasErrors(['open_time', 'close_time']);
     }
 
@@ -69,8 +69,8 @@ class SettingValidationTest extends TestCase
         $payload = $this->validPayload();
         $payload['tax_percent'] = 120;
 
-        $this->from(route('stores.settings.edit', ['store' => $store->id]))
-            ->put(route('stores.settings.update', ['store' => $store->id]), $payload)
+        $this->from(route('stores.settings.edit', ['store' => $store]))
+            ->put(route('stores.settings.update', ['store' => $store]), $payload)
             ->assertSessionHasErrors('tax_percent');
     }
 
@@ -85,8 +85,8 @@ class SettingValidationTest extends TestCase
         // Footer kini kolom TEXT banyak baris; batasnya 2000, bukan 120 lagi.
         $payload['receipt_footer'] = str_repeat('a', 2001);
 
-        $this->from(route('stores.settings.edit', ['store' => $store->id]))
-            ->put(route('stores.settings.update', ['store' => $store->id]), $payload)
+        $this->from(route('stores.settings.edit', ['store' => $store]))
+            ->put(route('stores.settings.update', ['store' => $store]), $payload)
             ->assertSessionHasErrors([
                 'currency',
                 'receipt_header',
@@ -99,8 +99,8 @@ class SettingValidationTest extends TestCase
         $store = Store::factory()->create();
         $this->actingAs($this->storeAdmin($store));
 
-        $this->from(route('stores.settings.edit', ['store' => $store->id]))
-            ->put(route('stores.settings.update', ['store' => $store->id]), $this->validPayload())
+        $this->from(route('stores.settings.edit', ['store' => $store]))
+            ->put(route('stores.settings.update', ['store' => $store]), $this->validPayload())
             ->assertSessionHas('success');
 
         $this->assertDatabaseHas('stores', [

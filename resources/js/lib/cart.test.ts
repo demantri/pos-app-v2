@@ -10,7 +10,7 @@ import type { CartItem } from '@/types';
 
 function item(overrides: Partial<CartItem> = {}): CartItem {
     return {
-        product_id: 1,
+        product_id: 'PRODUK-1',
         name: 'Kopi Susu',
         price: 12000,
         qty: 1,
@@ -38,7 +38,7 @@ describe('cartSubtotal', () => {
         expect(
             cartSubtotal([
                 item({ qty: 2 }),
-                item({ product_id: 2, price: 5000, qty: 3 }),
+                item({ product_id: 'PRODUK-2', price: 5000, qty: 3 }),
             ]),
         ).toBe(39000);
     });
@@ -65,7 +65,7 @@ describe('cartTotals', () => {
 
     it('menghitung subtotal, pajak, dan total', () => {
         const totals = cartTotals(
-            [item({ qty: 2 }), item({ product_id: 2, price: 15000 })],
+            [item({ qty: 2 }), item({ product_id: 'PRODUK-2', price: 15000 })],
             options,
         );
 

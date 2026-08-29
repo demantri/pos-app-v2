@@ -41,10 +41,12 @@ class ProductRequest extends FormRequest
                 'max:40',
                 Rule::unique('products', 'barcode')->where('store_id', $storeId)->ignore($productId),
             ],
+            // Klien mengirim ULID kategori, bukan primary key-nya. Dicocokkan
+            // ke kolom `ulid` dan tetap di-scope ke toko ini.
             'category_id' => [
                 'required',
-                'integer',
-                Rule::exists('categories', 'id')->where('store_id', $storeId),
+                'string',
+                Rule::exists('categories', 'ulid')->where('store_id', $storeId),
             ],
             'price' => ['required', 'integer', 'min:0'],
             'stock' => ['required', 'integer', 'min:0'],

@@ -18,8 +18,8 @@ class CheckoutTest extends TestCase
         $store = Store::factory()->create();
         $this->actingAs($this->storeAdmin($store));
 
-        $this->from(route('stores.pos', ['store' => $store->id]))
-            ->post(route('stores.pos.checkout', ['store' => $store->id]), [
+        $this->from(route('stores.pos', ['store' => $store]))
+            ->post(route('stores.pos.checkout', ['store' => $store]), [
                 'items' => [],
                 'discount' => 0,
                 'payment_method' => 'tunai',
@@ -36,10 +36,10 @@ class CheckoutTest extends TestCase
         $this->actingAs($this->storeAdmin($store));
         $product = Product::factory()->create(['store_id' => $store->id, 'price' => 12000, 'stock' => 10]);
 
-        $this->from(route('stores.pos', ['store' => $store->id]))
-            ->post(route('stores.pos.checkout', ['store' => $store->id]), [
+        $this->from(route('stores.pos', ['store' => $store]))
+            ->post(route('stores.pos.checkout', ['store' => $store]), [
                 'items' => [
-                    ['product_id' => $product->id, 'qty' => 1, 'price' => 12000, 'discount' => 0],
+                    ['product_id' => $product->ulid, 'qty' => 1, 'price' => 12000, 'discount' => 0],
                 ],
                 'discount' => 0,
                 'payment_method' => 'transfer',
@@ -58,10 +58,10 @@ class CheckoutTest extends TestCase
         $this->actingAs($this->storeAdmin($store));
         $product = Product::factory()->create(['store_id' => $store->id]);
 
-        $this->from(route('stores.pos', ['store' => $store->id]))
-            ->post(route('stores.pos.checkout', ['store' => $store->id]), [
+        $this->from(route('stores.pos', ['store' => $store]))
+            ->post(route('stores.pos.checkout', ['store' => $store]), [
                 'items' => [
-                    ['product_id' => $product->id, 'qty' => -1, 'price' => -12000, 'discount' => -500],
+                    ['product_id' => $product->ulid, 'qty' => -1, 'price' => -12000, 'discount' => -500],
                 ],
                 'discount' => -1000,
                 'payment_method' => 'tunai',
@@ -102,19 +102,19 @@ class CheckoutTest extends TestCase
             'store_id' => $store->id, 'category_id' => $category->id, 'price' => 5500, 'stock' => 4,
         ]);
 
-        $this->from(route('stores.pos', ['store' => $store->id]))
-            ->post(route('stores.pos.checkout', ['store' => $store->id]), [
+        $this->from(route('stores.pos', ['store' => $store]))
+            ->post(route('stores.pos.checkout', ['store' => $store]), [
                 'items' => [
                     // Harga di payload sengaja dipalsukan menjadi Rp 1 —
                     // server harus mengabaikannya dan memakai harga produk.
-                    ['product_id' => $kopi->id, 'qty' => 2, 'price' => 1, 'discount' => 0],
-                    ['product_id' => $teh->id, 'qty' => 1, 'price' => 5500, 'discount' => 500],
+                    ['product_id' => $kopi->ulid, 'qty' => 2, 'price' => 1, 'discount' => 0],
+                    ['product_id' => $teh->ulid, 'qty' => 1, 'price' => 5500, 'discount' => 500],
                 ],
                 'discount' => 1000,
                 'payment_method' => 'tunai',
                 'paid' => 50000,
             ])
-            ->assertRedirect(route('stores.pos', ['store' => $store->id]))
+            ->assertRedirect(route('stores.pos', ['store' => $store]))
             ->assertSessionHas('success');
 
         // subtotal = (12000*2) + (5500 - 500) = 29000
@@ -134,6 +134,8 @@ class CheckoutTest extends TestCase
         ]);
 
         $this->assertDatabaseHas('transaction_items', [
+            // Kolom database menyimpan foreign key integer, bukan ULID yang
+            // dikirim klien.
             'product_id' => $kopi->id,
             'qty' => 2,
             'price' => 12000,

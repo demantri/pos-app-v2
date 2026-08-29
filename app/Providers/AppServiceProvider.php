@@ -44,7 +44,9 @@ class AppServiceProvider extends ServiceProvider
         // Toko terarsip sengaja tidak terjangkau lewat {store}: seluruh rute
         // toko harus memperlakukannya seolah tidak ada. Hanya rute pemulihan
         // yang memakai parameter ini.
-        Route::bind('archivedStore', fn (string $id): Store => Store::withTrashed()->findOrFail($id));
+        Route::bind('archivedStore', fn (string $ulid): Store => Store::withTrashed()
+            ->where('ulid', $ulid)
+            ->firstOrFail());
     }
 
     /**

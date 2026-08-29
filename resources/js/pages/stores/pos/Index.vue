@@ -92,7 +92,7 @@ const sellableProducts = computed(() => props.products.filter((product) => produ
  * yang menambah sepuluh batang rokok yang sama akan dihujani sepuluh
  * notifikasi. Bukan ref karena tidak dipakai di template.
  */
-const lowStockWarned = new Set<number>();
+const lowStockWarned = new Set<string>();
 
 function isLowStock(product: Product): boolean {
     return product.min_stock > 0 && product.stock <= product.min_stock;

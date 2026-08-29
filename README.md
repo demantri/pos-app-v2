@@ -152,6 +152,24 @@ sehingga produk lama tidak tiba-tiba jadi berisik.
 | `/stores/{id}/users` | Pengguna toko | owner, admin toko |
 | `/stores/{id}/settings` | Setelan operasional + printer | admin toko |
 
+## Id di URL
+
+Seluruh URL memakai **ULID**, bukan id berurut: `/stores/01JB.../products`.
+Primary key di database tetap integer — lima tabel merujuknya lewat foreign key
+dan angkanya tidak pernah keluar ke klien. Yang dipakai di URL adalah kolom
+`ulid` lewat `App\Concerns\HasUlidRouteKey` (`getRouteKeyName()`), tersedia di
+`stores`, `categories`, `products`, `transactions`, dan `users`.
+
+Konsekuensinya untuk siapa pun yang menyentuh kode ini:
+
+- Payload Inertia mengirim `id` **berisi ULID**, bukan primary key. Termasuk
+  `category_id` pada produk dan `product_id` pada keranjang POS.
+- Saat membuat URL di PHP, oper **modelnya**: `route('stores.pos', ['store' => $store])`.
+  Mengoper `$store->id` menghasilkan URL id berurut yang sudah tidak dikenali.
+- Aturan validasi yang mencocokkan id klien memakai kolom `ulid`
+  (`Rule::exists('products', 'ulid')`), lalu controller menerjemahkannya ke
+  foreign key integer sebelum menyimpan.
+
 ## Catatan data
 
 - **Uang disimpan sebagai integer rupiah**, tanpa desimal. Rumus keranjang ada

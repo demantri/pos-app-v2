@@ -75,9 +75,9 @@ class StoreData
     {
         return self::visibleQuery($viewer)
             ->orderBy('id')
-            ->get(['stores.id', 'stores.name', 'stores.code'])
+            ->get(['stores.id', 'stores.ulid', 'stores.name', 'stores.code'])
             ->map(static fn (Store $store): array => [
-                'id' => $store->id,
+                'id' => $store->ulid,
                 'name' => $store->name,
                 'code' => $store->code,
             ])
@@ -110,7 +110,7 @@ class StoreData
             ->orderBy('name')
             ->get()
             ->map(static fn (User $user): array => [
-                'id' => $user->id,
+                'id' => $user->ulid,
                 'name' => $user->name,
                 'email' => $user->email,
                 'role' => $user->pivot?->role,
@@ -129,7 +129,9 @@ class StoreData
         $viewer ??= auth()->user();
 
         return [
-            'id' => $store->id,
+            // Yang keluar ke klien adalah ULID, bukan primary key berurut —
+            // seluruh URL memakainya (lihat App\Concerns\HasUlidRouteKey).
+            'id' => $store->ulid,
             'name' => $store->name,
             'code' => $store->code,
             'address' => $store->address,
@@ -157,7 +159,7 @@ class StoreData
             ->orderBy('id')
             ->get()
             ->map(static fn (Category $category): array => [
-                'id' => $category->id,
+                'id' => $category->ulid,
                 'name' => $category->name,
                 // Kolomnya nullable di database, tapi UI memperlakukan
                 // deskripsi sebagai string biasa.
@@ -173,17 +175,17 @@ class StoreData
     public static function products(Store $store): array
     {
         return $store->products()
-            ->with('category:id,name')
+            ->with('category:id,ulid,name')
             ->orderBy('id')
             ->get()
             ->map(static fn (Product $product): array => [
-                'id' => $product->id,
+                'id' => $product->ulid,
                 'name' => $product->name,
                 'sku' => $product->sku,
                 'barcode' => $product->barcode ?? '',
                 // Bisa null: menghapus kategori melepas pengelompokan produk
                 // (nullOnDelete), tidak menghapus produknya.
-                'category_id' => $product->category_id,
+                'category_id' => $product->category?->ulid,
                 'category' => $product->category?->name ?? self::UNCATEGORIZED,
                 'price' => $product->price,
                 'stock' => $product->stock,
@@ -248,9 +250,9 @@ class StoreData
             'low_stock_count' => (clone $lowStockQuery)->count(),
             'low_stock' => $lowStockQuery
                 ->limit(self::LOW_STOCK_LIMIT)
-                ->get(['id', 'name', 'stock', 'min_stock', 'unit'])
+                ->get(['id', 'ulid', 'name', 'stock', 'min_stock', 'unit'])
                 ->map(static fn (Product $product): array => [
-                    'id' => $product->id,
+                    'id' => $product->ulid,
                     'name' => $product->name,
                     'stock' => $product->stock,
                     'min_stock' => $product->min_stock,
@@ -313,7 +315,7 @@ class StoreData
     private static function transaction(Transaction $transaction): array
     {
         return [
-            'id' => $transaction->id,
+            'id' => $transaction->ulid,
             'number' => $transaction->number,
             // formatDateTime() di klien menerima 'Y-m-d H:i:s' maupun ISO.
             'created_at' => $transaction->created_at?->format('Y-m-d H:i:s') ?? '',

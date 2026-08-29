@@ -101,31 +101,32 @@ class ProcessCheckout
      */
     private function buildLines(Store $store, array $items): array
     {
-        /** @var array<int, array{qty: int, discount: int}> $merged */
+        /** @var array<string, array{qty: int, discount: int}> $merged */
         $merged = [];
 
-        // Klien bisa mengirim produk yang sama lebih dari sekali; digabung
-        // dulu supaya pemeriksaan stok memakai total qty yang sebenarnya.
+        // Klien mengenal produk lewat ULID, bukan primary key. Produk yang
+        // sama bisa dikirim lebih dari sekali; digabung dulu supaya
+        // pemeriksaan stok memakai total qty yang sebenarnya.
         foreach ($items as $item) {
-            $productId = (int) $item['product_id'];
+            $ulid = (string) $item['product_id'];
 
-            $merged[$productId] = [
-                'qty' => ($merged[$productId]['qty'] ?? 0) + (int) $item['qty'],
-                'discount' => ($merged[$productId]['discount'] ?? 0) + max(0, (int) $item['discount']),
+            $merged[$ulid] = [
+                'qty' => ($merged[$ulid]['qty'] ?? 0) + (int) $item['qty'],
+                'discount' => ($merged[$ulid]['discount'] ?? 0) + max(0, (int) $item['discount']),
             ];
         }
 
         $products = Product::query()
             ->where('store_id', $store->id)
-            ->whereIn('id', array_keys($merged))
+            ->whereIn('ulid', array_keys($merged))
             ->lockForUpdate()
             ->get()
-            ->keyBy('id');
+            ->keyBy('ulid');
 
         $lines = [];
 
-        foreach ($merged as $productId => $row) {
-            $product = $products->get($productId);
+        foreach ($merged as $ulid => $row) {
+            $product = $products->get($ulid);
 
             if (! $product instanceof Product) {
                 throw ValidationException::withMessages([

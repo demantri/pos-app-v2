@@ -492,6 +492,46 @@ baru, tidak pernah menautkan yang sudah ada.
 aturan unique email dengan pesan bawaannya, jadi kelas kebocoran yang sama masih ada di sana.
 Di luar permintaan user, dan akun yang diubah adalah milik penggunanya sendiri.
 
+## 5h. ULID menggantikan id berurut di URL (2026-08-29)
+
+Permintaan user: *"untuk id yg digunakan, jangan id store nya. gunakan by uuid aja atau id
+unique"*. Cakupan yang dipilih user: **semua id di URL** (toko, kategori, produk, transaksi,
+pengguna), formatnya **ULID**.
+
+**Primary key TIDAK diubah.** Lima tabel merujuk `store_id` lewat foreign key; menggantinya
+menjadi ULID hanya menambah risiko tanpa manfaat keamanan, karena angkanya tidak pernah lagi
+keluar ke klien setelah perubahan ini. Yang ditambahkan adalah kolom `ulid` (char 26, unique)
+plus trait `App\Concerns\HasUlidRouteKey` yang mengisinya saat creating dan mengembalikannya
+lewat `getRouteKeyName()`. ULID dipilih ketimbang UUID v4 karena terurut waktu sehingga
+index-nya tidak menyebar acak.
+
+Yang ikut berubah dan mudah terlewat:
+
+- **Payload Inertia mengirim ULID di field `id`** — bukan menambah field baru. Dengan begitu
+  40-an pemanggilan `storePath(store.id)` di frontend tidak perlu diubah sama sekali; yang
+  berubah hanya tipenya (`number` → `string`).
+- `product.category_id` dan `CartItem.product_id` ikut menjadi ULID, sehingga
+  `CheckoutRequest` dan `ProductRequest` mencocokkan ke kolom `ulid`, lalu controller/action
+  menerjemahkannya ke foreign key integer sebelum menyimpan.
+- `Route::bind('archivedStore')` harus mencari lewat `where('ulid', ...)`, bukan `findOrFail`.
+- **`route()` harus dioper MODELNYA**, bukan `$model->id`. `EntryPointController` sempat lolos
+  dengan `['store' => $store->id]` dan menghasilkan `/stores/1/pos` yang kini 404 — ketahuan
+  dari uji runtime, bukan dari test.
+
+### Verifikasi runtime
+
+| Uji | Hasil |
+|---|---|
+| `/dashboard` untuk kasir / admin / owner | `/stores/01M15.../pos`, `/stores/01M15...`, `/stores` |
+| `GET /stores/{ULID}/pos` | 200 |
+| `GET /stores/1/pos` (id lama) | **404** |
+| `PUT /stores/3` (id lama) | **404** |
+| Checkout dengan ULID produk | 302, transaksi tersimpan |
+| Checkout dengan id numerik lama | ditolak `items.0.product_id` |
+| Buat kategori lalu produk memakai ULID kategori | tersimpan, FK diterjemahkan ke id 17 |
+| Ubah / arsipkan / pulihkan toko lewat URL ULID | 303 semua, keadaan akhir benar |
+| Klik menu Produk → Kategori → Transaksi → Pengguna → Setting di browser | seluruhnya `/stores/01M15.../...` |
+
 ## 6. Catatan T4 (jalur baca) — sudah dikerjakan, disimpan sebagai rujukan
 
 - Ganti pemanggilan `DemoData::*` di controller dengan query Eloquent. `products_count` /
