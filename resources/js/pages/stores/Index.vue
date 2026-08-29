@@ -192,8 +192,8 @@ function restore(store: Store): void {
                                 <CardDescription>Kode {{ store.code }}</CardDescription>
                             </div>
                             <div class="flex flex-col items-end gap-1">
-                                <Badge v-if="store.is_archived" variant="outline">Terarsip</Badge>
-                                <Badge v-else :variant="store.is_active ? 'default' : 'secondary'">
+                                <Badge v-if="store.is_archived" variant="neutral">Terarsip</Badge>
+                                <Badge v-else :variant="store.is_active ? 'success' : 'warning'">
                                     {{ store.is_active ? 'Buka' : 'Tutup' }}
                                 </Badge>
                                 <span v-if="store.role" class="text-muted-foreground text-xs">
@@ -213,18 +213,20 @@ function restore(store: Store): void {
                         </p>
                         <p class="text-foreground font-medium">{{ store.products_count }} produk</p>
 
-                        <div v-if="canAdminister && ! store.is_archived" class="flex items-center gap-3 pt-1">
-                            <Switch
-                                :id="`store-active-${store.id}`"
-                                :model-value="store.is_active"
-                                @update:model-value="toggleActive(store)"
-                            />
-                            <Label :for="`store-active-${store.id}`">
-                                Toko buka
-                                <span class="text-muted-foreground block text-xs font-normal">
-                                    Ditutup berarti stafnya tidak bisa masuk
-                                </span>
-                            </Label>
+                        <div v-if="canAdminister && ! store.is_archived" class="space-y-1 pt-1">
+                            <div class="flex items-center gap-3">
+                                <Switch
+                                    :id="`store-active-${store.id}`"
+                                    :model-value="store.is_active"
+                                    @update:model-value="toggleActive(store)"
+                                />
+                                <Label :for="`store-active-${store.id}`">Toko buka</Label>
+                            </div>
+                            <!-- Keterangannya sebaris penuh di bawah, bukan berdesakan
+                                 di samping toggle pada kartu yang sempit. -->
+                            <p class="text-muted-foreground text-xs">
+                                Ditutup berarti stafnya tidak bisa masuk
+                            </p>
                         </div>
                     </CardContent>
 
@@ -330,7 +332,7 @@ function restore(store: Store): void {
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                     <AlertDialogCancel @click="archiving = null">Batal</AlertDialogCancel>
-                    <AlertDialogAction @click="confirmArchive">Arsipkan</AlertDialogAction>
+                    <AlertDialogAction class="bg-danger text-danger-foreground border border-danger-foreground/20 hover:bg-danger/80" @click="confirmArchive">Arsipkan</AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>

@@ -80,7 +80,7 @@ const cards = computed(() => [
                         <CardTitle class="flex items-center gap-2 text-base">
                             <Users class="size-4" />
                             Toko belum punya pengguna
-                            <Badge v-if="highlights.stores_without_users.count > 0" variant="secondary">
+                            <Badge v-if="highlights.stores_without_users.count > 0" variant="warning">
                                 {{ highlights.stores_without_users.count }}
                             </Badge>
                         </CardTitle>
@@ -114,7 +114,7 @@ const cards = computed(() => [
                         <CardTitle class="flex items-center gap-2 text-base">
                             <UserRound class="size-4" />
                             Akun belum ditugaskan
-                            <Badge v-if="highlights.users_without_stores.count > 0" variant="secondary">
+                            <Badge v-if="highlights.users_without_stores.count > 0" variant="warning">
                                 {{ highlights.users_without_stores.count }}
                             </Badge>
                         </CardTitle>
@@ -155,7 +155,7 @@ const cards = computed(() => [
                         <CardTitle class="flex items-center gap-2 text-base">
                             <PowerOff class="size-4" />
                             Toko nonaktif
-                            <Badge v-if="highlights.inactive_stores.count > 0" variant="secondary">
+                            <Badge v-if="highlights.inactive_stores.count > 0" variant="neutral">
                                 {{ highlights.inactive_stores.count }}
                             </Badge>
                         </CardTitle>
@@ -178,7 +178,7 @@ const cards = computed(() => [
                         <CardTitle class="flex items-center gap-2 text-base">
                             <Archive class="size-4" />
                             Toko terarsip
-                            <Badge v-if="highlights.archived_stores.count > 0" variant="secondary">
+                            <Badge v-if="highlights.archived_stores.count > 0" variant="neutral">
                                 {{ highlights.archived_stores.count }}
                             </Badge>
                         </CardTitle>

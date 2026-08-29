@@ -51,6 +51,25 @@
     --color-chart-4: var(--chart-4);
     --color-chart-5: var(--chart-5);
 
+    /*
+     * Nada status. Semuanya LEMBUT: latar bernada pucat dengan teks pekat di
+     * mode terang, dan sebaliknya di mode gelap. `ink` sengaja solid — "hitam
+     * lembut" hanya akan jatuh menjadi abu-abu dan bertabrakan dengan
+     * `neutral`. Seluruh pasangan teks/latar sudah diperiksa >= 4.5:1.
+     */
+    --color-success: var(--success);
+    --color-success-foreground: var(--success-foreground);
+    --color-info: var(--info);
+    --color-info-foreground: var(--info-foreground);
+    --color-warning: var(--warning);
+    --color-warning-foreground: var(--warning-foreground);
+    --color-danger: var(--danger);
+    --color-danger-foreground: var(--danger-foreground);
+    --color-neutral: var(--neutral);
+    --color-neutral-foreground: var(--neutral-foreground);
+    --color-ink: var(--ink);
+    --color-ink-foreground: var(--ink-foreground);
+
     --color-sidebar: var(--sidebar-background);
     --color-sidebar-foreground: var(--sidebar-foreground);
     --color-sidebar-primary: var(--sidebar-primary);
@@ -114,6 +133,19 @@
     --chart-3: hsl(197 37% 24%);
     --chart-4: hsl(43 74% 66%);
     --chart-5: hsl(27 87% 67%);
+
+    --success: #e8f7ee;
+    --success-foreground: #17663a;
+    --info: #e8f1fd;
+    --info-foreground: #17518f;
+    --warning: #fdf2d9;
+    --warning-foreground: #7a4d0b;
+    --danger: #fdeaea;
+    --danger-foreground: #9b2226;
+    --neutral: #eeeef1;
+    --neutral-foreground: #4a4a55;
+    --ink: #1a1a1f;
+    --ink-foreground: #fafafa;
     --radius: 0.5rem;
     --sidebar-background: hsl(0 0% 98%);
     --sidebar-foreground: hsl(240 5.3% 26.1%);
@@ -151,6 +183,19 @@
     --chart-3: hsl(30 80% 55%);
     --chart-4: hsl(280 65% 60%);
     --chart-5: hsl(340 75% 55%);
+
+    --success: #0f2b1c;
+    --success-foreground: #86e0ab;
+    --info: #10243d;
+    --info-foreground: #9ec8ff;
+    --warning: #2e2410;
+    --warning-foreground: #f2cf72;
+    --danger: #33161a;
+    --danger-foreground: #f2a3a3;
+    --neutral: #26262b;
+    --neutral-foreground: #c2c2cc;
+    --ink: #f5f5f7;
+    --ink-foreground: #17171c;
     --sidebar-background: hsl(0 0% 7%);
     --sidebar-foreground: hsl(0 0% 95.9%);
     --sidebar-primary: hsl(360, 100%, 100%);

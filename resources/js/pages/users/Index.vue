@@ -114,11 +114,11 @@ function isSelf(user: AppUser): boolean {
                                 <TableCell class="text-muted-foreground">{{ user.email }}</TableCell>
                                 <TableCell>
                                     <div class="flex flex-wrap gap-1">
-                                        <Badge v-if="user.is_owner">Owner aplikasi</Badge>
+                                        <Badge v-if="user.is_owner" variant="ink">Owner aplikasi</Badge>
                                         <Badge
                                             v-for="store in user.stores"
                                             :key="store.id"
-                                            variant="secondary"
+                                            :variant="store.role === 'admin' ? 'info' : 'neutral'"
                                             as-child
                                         >
                                             <Link :href="storePath(store.id, 'users')">
@@ -169,7 +169,7 @@ function isSelf(user: AppUser): boolean {
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                     <AlertDialogCancel @click="removing = null">Batal</AlertDialogCancel>
-                    <AlertDialogAction @click="confirmRemove">Hapus akun</AlertDialogAction>
+                    <AlertDialogAction class="bg-danger text-danger-foreground border border-danger-foreground/20 hover:bg-danger/80" @click="confirmRemove">Hapus akun</AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>

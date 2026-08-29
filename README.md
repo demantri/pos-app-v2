@@ -173,6 +173,29 @@ ada dua tempat yang bisa berbeda. Menghapus akun **tidak menghapus riwayat
 transaksinya**: `transactions.user_id` memakai `nullOnDelete` dan nama kasir
 disimpan sebagai snapshot di struk.
 
+## Warna status
+
+Aplikasi ini memakai enam nada warna lembut yang sadar tema, didefinisikan
+sebagai token di `resources/css/app.css` (`--success`, `--info`, `--warning`,
+`--danger`, `--neutral`, `--ink`) dengan nilai terpisah untuk mode terang dan
+gelap:
+
+| Nada | Dipakai untuk |
+|---|---|
+| `success` | Produk aktif, toko buka |
+| `info` | Peran admin, metode pembayaran, nomor struk |
+| `warning` | Stok menipis, toko tutup, sorotan yang perlu ditindaklanjuti |
+| `danger` | Stok habis, tombol konfirmasi hapus |
+| `neutral` | Label sekunder: nama kasir, toko terarsip, peran kasir |
+| `ink` | Penekanan kuat. Ini satu-satunya nada SOLID — "hitam lembut" hanya akan jatuh jadi abu-abu dan bertabrakan dengan `neutral` |
+
+Tersedia sebagai varian di `ui/badge` dan `ui/button`, jadi cukup
+`<Badge variant="warning">` atau `<Button variant="danger">`.
+
+Seluruh pasangan teks/latar sudah diperiksa rasio kontrasnya di kedua tema —
+yang terendah 6,3:1, jauh di atas ambang 4,5:1. Kalau menambah nada baru,
+periksa kontrasnya, jangan dikira-kira.
+
 ## Halaman masuk
 
 Layar autentikasi memakai `layouts/auth/AuthPhotoLayout.vue`: foto suasana kasir

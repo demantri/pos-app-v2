@@ -364,10 +364,10 @@ useEventListener(window, 'keydown', (event: KeyboardEvent) => {
                                 <span class="text-muted-foreground text-xs">
                                     Stok {{ product.stock }} {{ product.unit }}
                                 </span>
-                                <Badge v-if="product.stock <= 0" variant="destructive" class="w-fit">
+                                <Badge v-if="product.stock <= 0" variant="danger" class="w-fit">
                                     Habis
                                 </Badge>
-                                <Badge v-else-if="isLowStock(product)" variant="secondary" class="w-fit">
+                                <Badge v-else-if="isLowStock(product)" variant="warning" class="w-fit">
                                     Stok menipis
                                 </Badge>
                             </div>
@@ -390,7 +390,7 @@ useEventListener(window, 'keydown', (event: KeyboardEvent) => {
                             <Receipt class="size-4" />
                             Keranjang
                         </div>
-                        <Badge variant="secondary">{{ orderNumber }}</Badge>
+                        <Badge variant="info">{{ orderNumber }}</Badge>
                     </div>
 
                     <Separator />

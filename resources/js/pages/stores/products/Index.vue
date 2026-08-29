@@ -310,14 +310,14 @@ function confirmDelete(): void {
                                 <TableCell class="text-right">
                                     <span>{{ product.stock }} {{ product.unit }}</span>
                                     <span class="mt-1 block">
-                                        <Badge v-if="product.stock <= 0" variant="destructive">Habis</Badge>
-                                        <Badge v-else-if="isLowStock(product)" variant="secondary">
+                                        <Badge v-if="product.stock <= 0" variant="danger">Habis</Badge>
+                                        <Badge v-else-if="isLowStock(product)" variant="warning">
                                             Menipis
                                         </Badge>
                                     </span>
                                 </TableCell>
                                 <TableCell>
-                                    <Badge :variant="product.is_active ? 'default' : 'secondary'">
+                                    <Badge :variant="product.is_active ? 'success' : 'neutral'">
                                         {{ product.is_active ? 'Aktif' : 'Nonaktif' }}
                                     </Badge>
                                 </TableCell>
@@ -505,7 +505,7 @@ function confirmDelete(): void {
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                     <AlertDialogCancel @click="deletingId = null">Batal</AlertDialogCancel>
-                    <AlertDialogAction @click="confirmDelete">Hapus</AlertDialogAction>
+                    <AlertDialogAction class="bg-danger text-danger-foreground border border-danger-foreground/20 hover:bg-danger/80" @click="confirmDelete">Hapus</AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>

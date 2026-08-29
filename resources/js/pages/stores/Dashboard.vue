@@ -186,7 +186,7 @@ const cards = computed(() => [
                                     <TableCell class="font-medium">{{ transaction.number }}</TableCell>
                                     <TableCell>{{ formatDateTime(transaction.created_at) }}</TableCell>
                                     <TableCell>
-                                        <Badge variant="secondary">{{ transaction.cashier }}</Badge>
+                                        <Badge variant="neutral">{{ transaction.cashier }}</Badge>
                                     </TableCell>
                                     <TableCell class="text-right">{{ transaction.items_count }}</TableCell>
                                     <TableCell class="text-right">{{ formatRupiah(transaction.total) }}</TableCell>
@@ -225,7 +225,7 @@ const cards = computed(() => [
                                 class="flex items-start justify-between gap-3"
                             >
                                 <span class="flex-1">{{ product.name }}</span>
-                                <Badge variant="secondary" class="shrink-0">
+                                <Badge variant="warning" class="shrink-0">
                                     {{ product.stock }} / {{ product.min_stock }} {{ product.unit }}
                                 </Badge>
                             </li>

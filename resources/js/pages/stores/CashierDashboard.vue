@@ -105,7 +105,7 @@ const cards = computed(() => [
                                 <TableCell class="font-medium">{{ transaction.number }}</TableCell>
                                 <TableCell>{{ formatDateTime(transaction.created_at) }}</TableCell>
                                 <TableCell>
-                                    <Badge variant="secondary">{{ transaction.cashier }}</Badge>
+                                    <Badge variant="neutral">{{ transaction.cashier }}</Badge>
                                 </TableCell>
                                 <TableCell class="text-right">{{ transaction.items_count }}</TableCell>
                                 <TableCell class="text-right">{{ formatRupiah(transaction.total) }}</TableCell>

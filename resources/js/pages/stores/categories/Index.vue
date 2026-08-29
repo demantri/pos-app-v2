@@ -210,7 +210,7 @@ function confirmDelete(): void {
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                     <AlertDialogCancel @click="deletingId = null">Batal</AlertDialogCancel>
-                    <AlertDialogAction @click="confirmDelete">Hapus</AlertDialogAction>
+                    <AlertDialogAction class="bg-danger text-danger-foreground border border-danger-foreground/20 hover:bg-danger/80" @click="confirmDelete">Hapus</AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>

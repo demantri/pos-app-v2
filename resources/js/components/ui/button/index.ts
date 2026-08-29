@@ -19,6 +19,18 @@ export const buttonVariants = cva(
         ghost:
           "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
         link: "text-primary underline-offset-4 hover:underline",
+        // Nada status lembut — cukup jelas untuk membedakan akibat sebuah
+        // tombol tanpa berteriak seperti tombol solid.
+        success:
+          "bg-success text-success-foreground border border-success-foreground/20 hover:bg-success/80",
+        info:
+          "bg-info text-info-foreground border border-info-foreground/20 hover:bg-info/80",
+        warning:
+          "bg-warning text-warning-foreground border border-warning-foreground/20 hover:bg-warning/80",
+        danger:
+          "bg-danger text-danger-foreground border border-danger-foreground/20 hover:bg-danger/80",
+        neutral:
+          "bg-neutral text-neutral-foreground border border-neutral-foreground/20 hover:bg-neutral/80",
       },
       size: {
         "default": "h-9 px-4 py-2 has-[>svg]:px-3",

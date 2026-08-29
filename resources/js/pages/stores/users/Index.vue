@@ -149,7 +149,7 @@ function confirmRemove(): void {
                                 <TableCell class="font-medium">{{ user.name }}</TableCell>
                                 <TableCell class="text-muted-foreground">{{ user.email }}</TableCell>
                                 <TableCell>
-                                    <Badge :variant="user.role === 'admin' ? 'default' : 'secondary'">
+                                    <Badge :variant="user.role === 'admin' ? 'info' : 'neutral'">
                                         {{ user.role === 'admin' ? 'Admin toko' : 'Kasir' }}
                                     </Badge>
                                 </TableCell>
@@ -246,7 +246,7 @@ function confirmRemove(): void {
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                     <AlertDialogCancel @click="removing = null">Batal</AlertDialogCancel>
-                    <AlertDialogAction @click="confirmRemove">Cabut akses</AlertDialogAction>
+                    <AlertDialogAction class="bg-danger text-danger-foreground border border-danger-foreground/20 hover:bg-danger/80" @click="confirmRemove">Cabut akses</AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>

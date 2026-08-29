@@ -112,7 +112,7 @@ const paymentLabel: Record<Transaction['payment_method'], string> = {
                                 <TableCell class="text-right">{{ transaction.items_count }}</TableCell>
                                 <TableCell class="text-right">{{ formatRupiah(transaction.total) }}</TableCell>
                                 <TableCell>
-                                    <Badge variant="secondary">
+                                    <Badge variant="info">
                                         {{ paymentLabel[transaction.payment_method] }}
                                     </Badge>
                                 </TableCell>
