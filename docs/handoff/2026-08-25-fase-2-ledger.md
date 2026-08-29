@@ -200,3 +200,29 @@ Test: tidak ada test baru sesuai arahan user; test lama yang jadi usang diperbar
 Verifikasi runtime: seluruh klaim di atas diuji lewat HTTP sungguhan terhadap php artisan serve —
   matriks hasilnya ada di handoff §5b. Database dev dikembalikan bersih (migrate:fresh --seed)
   setelah selesai.
+
+## Fase 3 disepakati 2026-08-29 (belum dikerjakan)
+
+User meninjau ulang model peran di akhir sesi dan menambahkan satu batasan yang MENGUBAH apa
+yang sudah dibangun di T7: superadmin/owner aplikasi tidak boleh melihat transaksi toko yang
+sudah terdaftar — ia hanya menambah, mengubah, dan mengatur status toko.
+
+Ruling: itu berarti superadmin dicabut dari policy `manage` dan `operatePos`, bukan sekadar
+disembunyikan menunya. Konsekuensi yang saya angkat ke user sebelum menyetujui rencana: toko
+yang baru dibuat tidak punya pengguna sama sekali, jadi kalau superadmin dicabut TOTAL, tidak
+ada seorang pun yang bisa masuk ke toko itu — sistem jadi buntu sejak toko pertama.
+Keputusan user: superadmin tetap memegang layar Pengguna Toko, dibuka dari daftar toko, dan
+itu satu-satunya pintunya ke dalam scope toko.
+
+Keputusan user lain pada sesi yang sama:
+  - Hapus toko = SOFT DELETE (arsip). Alasan yang saya ajukan: foreign key store_id memakai
+    cascade, jadi hapus permanen ikut menghapus seluruh riwayat transaksi — catatan keuangan.
+    Saya tambahkan syarat filter arsip + tombol pulihkan, kalau tidak arsip hanya pintu jebakan.
+  - Identitas toko (nama/kode/alamat/telepon) hanya boleh diubah superadmin. Pemberat: kode toko
+    adalah awalan nomor struk, mengubahnya membuat penomoran mulai ulang. Konsekuensinya kartu
+    Identitas dan switch "Toko aktif" dicabut dari halaman Setting Toko milik admin toko.
+  - Penamaan tetap `owner` (user: "sama saja untuk perlakuannya"). Tidak ada rename kolom.
+  - Fitur subscribe DITUNDA atas permintaan user; fokus ke role dan permission dulu.
+
+Rencana teknis lengkap + perkiraan dampaknya ke test ada di handoff §5d. Tidak ada kode yang
+sudah ditulis untuk fase ini.

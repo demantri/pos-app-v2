@@ -27,6 +27,7 @@ sama bila butuh alasan di balik tiap keputusan.
 | T6 | Endpoint tulis lain (toko/kategori/produk/setting) + upload gambar produk | ✅ selesai (2026-08-29) |
 | T7 | Role owner/admin/kasir + otorisasi + layar kelola pengguna toko | ✅ selesai (2026-08-29) |
 | T8 | Rapikan test, buang label demo, README | sebagian — label demo sudah hilang, README belum |
+| Fase 3 | Perombakan role & permission (superadmin tidak lagi bisa masuk ke dalam toko) | disetujui, **belum dikerjakan** — lihat §5d |
 
 > Urutan T5/T6 sengaja ditukar dari rencana awal: user meminta jalur transaksi hidup lebih dulu.
 
@@ -299,6 +300,81 @@ Diverifikasi dengan Chrome headless lewat CDP (Playwright tidak terpasang): tang
 memperlihatkan toast hijau "Nota uji dikirim ke printer.", toast merah berisi pesan printer
 tidak ditemukan, dan checkout POS yang memunculkan keduanya sekaligus di atas dialog struk
 bernomor asli.
+
+## 5d. FASE 3 — perombakan role & permission (DISETUJUI, BELUM DIKERJAKAN)
+
+Diminta user 2026-08-29 di akhir sesi. Rencananya sudah disetujui sampai tahap desain; **tidak
+ada satu baris kode pun yang sudah ditulis untuk bagian ini.** Mulailah dari sini.
+
+### Perubahan intinya
+
+Superadmin **kehilangan** akses ke dalam toko yang sekarang ia punya. Kalimat user:
+*"admin/superadmin/owner aplikasi tidak dapat melihat transaksi dari toko yang sudah terdaftar.
+hanya bisa menambah, edit, dan merubah status tokonya (aktif/tidak aktif)"*.
+
+| | Superadmin (`is_owner`) | Admin toko | Kasir |
+|---|---|---|---|
+| Daftar semua toko | ✅ | hanya tokonya | hanya tokonya |
+| Tambah / ubah identitas toko | ✅ | ❌ | ❌ |
+| Status aktif & arsip toko | ✅ | ❌ | ❌ |
+| Kelola pengguna toko | ✅ semua toko | ✅ tokonya (kasir saja) | ❌ |
+| Dashboard, produk, kategori, transaksi, Setting Toko | ❌ | ✅ tokonya | ❌ |
+| Layar POS | ❌ | ✅ | ✅ |
+
+### Keputusan yang sudah diambil user
+
+1. **Hapus toko = soft delete (arsip).** Bukan hapus permanen — cascade akan menghapus seluruh
+   riwayat transaksi, dan itu catatan keuangan. Wajib disertai filter "Tampilkan arsip" dan
+   tombol Pulihkan; tanpa itu arsip hanya pintu jebakan yang butuh akses database untuk
+   dibatalkan.
+2. **Identitas toko (nama, kode, alamat, telepon) hanya boleh diubah superadmin**, dari daftar
+   toko. Alasan tambahan: kode toko adalah awalan nomor struk (`SDR-1011`) — mengubahnya
+   membuat penomoran mulai ulang.
+3. **Admin toko pertama dibuat superadmin dari daftar toko.** Ini menutup simpul bootstrap:
+   toko baru tidak punya pengguna sama sekali, jadi kalau superadmin dicabut total aksesnya,
+   tidak ada seorang pun yang bisa masuk ke toko itu. Layar Pengguna Toko adalah SATU-SATUNYA
+   pintu superadmin ke dalam scope toko.
+4. **Penamaan tetap `owner`.** User menyatakan perlakuannya sama saja, jadi kolom
+   `users.is_owner` dan label UI tidak diganti menjadi "superadmin".
+5. **Fitur subscribe DITUNDA** — user menyebutnya, lalu berkata *"untuk saat ini belum kearah
+   sana. fokus ke role dan permission dulu saja"*.
+
+### Rencana pengerjaan
+
+- **`StorePolicy` dipecah lebih halus:** `administer` (superadmin: ubah/arsip/status toko),
+  `manageUsers` (superadmin ATAU admin toko), `manage` (admin toko saja — owner DICABUT),
+  `operatePos` (admin/kasir toko — owner DICABUT), `create` (superadmin, sudah ada).
+- **`User::canManageStore()` dan `canAccessStore()` harus disesuaikan** — keduanya sekarang
+  mengembalikan true untuk owner, dan itulah yang membuat superadmin bisa masuk ke mana-mana.
+- **`ResolveStore` tetap mengizinkan owner masuk** supaya rute `stores/{store}/users`
+  terjangkau; policy per rute yang menutup sisanya. Kalau owner ditolak di middleware, layar
+  pengguna ikut mati.
+- **Rute baru di luar grup toko** (tanpa `resolve.store`): `PUT stores/{store}`,
+  `DELETE stores/{store}` (arsip), dan rute pulihkan. `Route::model` sudah terpasang global,
+  tapi binding akan 404 untuk toko terarsip — rute pulihkan perlu `withTrashed()`.
+- **`stores/{store}/users` dipindah** dari grup `can:manage` ke grup `can:manageUsers`.
+- **Migration** `stores.deleted_at` + trait `SoftDeletes` di model Store. Semua query daftar
+  toko otomatis mengecualikan arsip.
+- **Setting Toko menyusut:** kartu Identitas dan switch "Toko aktif" dicabut. Karena
+  `SettingController::update()` memakai `$request->validated()`, cukup membuang aturannya dari
+  `SettingRequest` — kolomnya otomatis tidak ikut ter-update.
+- **Daftar toko jadi pusat kerja superadmin:** tombol ubah, toggle aktif/nonaktif, arsipkan,
+  dan tautan Pengguna Toko per kartu.
+- **Shared prop `permissions` perlu tambahan** (mis. `can_manage_current_store_users`), dan
+  `AppSidebar` harus memakainya — superadmin di dalam scope toko hanya boleh melihat menu
+  Pengguna Toko dan Daftar Toko, tidak POS.
+- **Remah roti** di layar Pengguna Toko masih menunjuk dashboard toko (`storePath($id)`) yang
+  akan 403 bagi superadmin — samakan polanya dengan yang sudah dilakukan di layar POS.
+
+### Dampak ke test (diperkirakan enam berkas)
+
+`RoutesTest`, `StoreContextTest`, `CategoryValidationTest`, `ProductValidationTest`,
+`SettingValidationTest`, dan sebagian `CheckoutTest` memakai `User::factory()->owner()` untuk
+membuka halaman DI DALAM toko — persis yang sekarang harus menjadi 403. Aktornya perlu diganti
+menjadi admin toko sungguhan (user + baris pivot `store_user`). `SettingValidationTest` juga
+memuat assertion untuk `name`/`code`/`address`/`phone`/`is_active` yang aturannya akan hilang.
+Ini memperbarui test yang jadi usang karena perilaku sengaja berubah — bukan menulis test baru,
+jadi tetap sejalan dengan arahan user.
 
 ## 6. Catatan T4 (jalur baca) — sudah dikerjakan, disimpan sebagai rujukan
 
