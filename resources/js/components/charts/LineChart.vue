@@ -20,12 +20,17 @@ const props = withDefaults(
 const x = (_: ChartPoint, i: number): number => i;
 const y = (d: ChartPoint): number => d.value;
 
+/** Tanda sumbu bisa jatuh di posisi pecahan; jangan tampilkan apa pun di situ. */
+function categoryLabel(index: number): string {
+    return Number.isInteger(index) ? (props.data[index]?.label ?? '') : '';
+}
+
 /**
  * Tooltip dibuat sebagai HTML biasa supaya kelas Tailwind-nya ikut terpindai
  * dan warnanya mengikuti tema, sama seperti komponen lain.
  */
-function tooltip(_: ChartPoint, index: number): string {
-    const point = props.data[index];
+function tooltip(_: unknown, index: number): string {
+    const point = Number.isInteger(index) ? props.data[index] : undefined;
 
     if (! point) {
         return '';
@@ -50,7 +55,7 @@ function tooltip(_: ChartPoint, index: number): string {
                 :grid-line="false"
                 :tick-line="false"
                 :domain-line="false"
-                :tick-format="(i: number) => data[i]?.label ?? ''"
+                :tick-format="categoryLabel"
                 :num-ticks="Math.min(data.length, 7)"
             />
             <VisAxis
