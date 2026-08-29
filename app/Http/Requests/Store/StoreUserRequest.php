@@ -45,6 +45,12 @@ class StoreUserRequest extends FormRequest
     {
         return [
             'role.in' => 'Anda hanya boleh membuat akun kasir untuk toko ini.',
+            // Sengaja TIDAK berbunyi "email sudah terdaftar": pesan seperti itu
+            // memberi tahu admin sebuah toko bahwa email tertentu dipakai
+            // seseorang di toko LAIN, padahal ia tidak boleh tahu apa pun soal
+            // pengguna toko lain. Konsekuensinya, orang yang bekerja di dua
+            // toko harus memakai dua email berbeda.
+            'email.unique' => 'Email ini tidak bisa dipakai. Gunakan email lain.',
         ];
     }
 

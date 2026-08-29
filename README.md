@@ -38,6 +38,17 @@ disembunyikan baginya, karena keduanya cuma jalan memutar ke tempat yang sama.
 Seorang pengguna bisa menjadi admin di satu toko sekaligus kasir di toko lain.
 Pendaftaran mandiri tertutup: akun hanya lahir dari owner atau admin toko.
 
+Data tiap toko terpisah penuh — transaksi, master data, dan laporannya hanya
+bisa dibuka pengguna toko itu sendiri. Percobaan menyentuh milik toko lain
+ditolak 403 (bukan anggota) atau 404 (id milik toko lain), termasuk lewat URL
+toko sendiri.
+
+Satu konsekuensi dari isolasi itu: **email harus unik di seluruh aplikasi**, dan
+pesan galatnya sengaja netral ("Email ini tidak bisa dipakai") supaya admin
+sebuah toko tidak bisa menyimpulkan siapa saja yang terdaftar di toko lain.
+Orang yang bekerja di dua toko perlu dua email berbeda; menautkan satu akun ke
+toko kedua hanya bisa lewat pivot `store_user` di database, tidak lewat UI.
+
 Penegakannya ada di `App\Policies\StorePolicy` dan middleware `can:` pada
 `routes/web.php`; UI hanya menyembunyikan menu yang memang akan ditolak server.
 

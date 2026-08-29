@@ -458,6 +458,40 @@ saja, sementara pengguna dua toko tetap punya pemilih dan menu Daftar Toko.
 Catatan: `DashboardTest` tetap hijau tanpa diubah — user factory polos tidak punya toko sama
 sekali, jadi ia memang seharusnya mendarat di daftar toko.
 
+## 5g. Isolasi antar toko — diverifikasi ulang 2026-08-29
+
+User menegaskan maksud "multi toko": boleh mendaftarkan banyak toko, tapi transaksi, master
+data, dan laporan per masing-masing toko, dan tidak bisa dibuka pengguna toko lain.
+
+Probe lintas-toko sebagai admin Toko Sudirman terhadap milik Toko Kelapa Dua:
+
+| Percobaan | Hasil |
+|---|---|
+| GET dashboard / transaksi / produk / POS / pengguna / setting toko lain | 403 semua |
+| DELETE `/stores/1/products/23` (produk toko lain lewat URL toko sendiri) | 404 |
+| DELETE `/stores/1/categories/10` | 404 |
+| POST `/stores/1/transactions/11/print` | 404 |
+| DELETE `/stores/1/users/4` | 404 |
+| Daftar toko & storeOptions yang ia lihat | hanya tokonya |
+
+Data toko lain utuh setelah seluruh percobaan. Isolasinya berlapis: middleware menolak
+non-anggota (403), `scopeBindings` memastikan setiap child record milik toko di URL yang sama
+(404). Jalur `users/{user}` baru diuji di sesi ini — sebelumnya belum pernah.
+
+**Kebocoran kecil yang ditemukan dan ditutup:** membuat pengguna dengan email milik pengguna
+toko LAIN dulu menjawab *"The email has already been taken."* — itu memberi tahu admin sebuah
+toko bahwa email tertentu terdaftar di suatu tempat. Keputusan user: tutup rapat, pesannya
+digenerikkan menjadi *"Email ini tidak bisa dipakai. Gunakan email lain."*
+
+**Konsekuensi yang disadari dan diterima:** orang yang bekerja di dua toko harus memakai dua
+email berbeda. Menautkan satu akun ke toko kedua (seperti `multirole@pos.test` bawaan seeder)
+hanya mungkin lewat pivot `store_user` di database — layar Pengguna Toko selalu MEMBUAT akun
+baru, tidak pernah menautkan yang sudah ada.
+
+**Sisi kasar serupa yang TIDAK disentuh:** form ubah profil bawaan starter kit juga memakai
+aturan unique email dengan pesan bawaannya, jadi kelas kebocoran yang sama masih ada di sana.
+Di luar permintaan user, dan akun yang diubah adalah milik penggunanya sendiri.
+
 ## 6. Catatan T4 (jalur baca) — sudah dikerjakan, disimpan sebagai rujukan
 
 - Ganti pemanggilan `DemoData::*` di controller dengan query Eloquent. `products_count` /
