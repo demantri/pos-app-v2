@@ -23,7 +23,19 @@ class StorePolicy
     }
 
     /**
-     * Membuka layar POS toko ini — owner, admin toko, dan kasir toko.
+     * Mengubah identitas toko, mengatur status aktif, mengarsipkan, dan
+     * memulihkannya — hanya owner. Ini wewenang tingkat aplikasi, bukan
+     * tingkat isi toko.
+     */
+    public function administer(User $user, Store $store): bool
+    {
+        return $user->canAdministerStores();
+    }
+
+    /**
+     * Membuka layar POS toko ini — admin toko dan kasir toko.
+     *
+     * Owner TIDAK termasuk sejak fase 3.
      */
     public function operatePos(User $user, Store $store): bool
     {
@@ -31,12 +43,22 @@ class StorePolicy
     }
 
     /**
-     * Mengelola isi toko (dashboard, produk, kategori, transaksi, setting,
-     * pengguna) — owner dan admin toko. Kasir tidak.
+     * Mengelola isi toko (dashboard, produk, kategori, transaksi, setting) —
+     * hanya admin toko. Owner tidak boleh melihat transaksi toko yang sudah
+     * terdaftar.
      */
     public function manage(User $user, Store $store): bool
     {
         return $user->canManageStore($store);
+    }
+
+    /**
+     * Mengelola pengguna toko — owner atau admin toko. Lihat
+     * User::canManageStoreUsers() untuk alasan owner tetap dilibatkan.
+     */
+    public function manageUsers(User $user, Store $store): bool
+    {
+        return $user->canManageStoreUsers($store);
     }
 
     /**

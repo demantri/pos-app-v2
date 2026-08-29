@@ -14,6 +14,8 @@ export type Store = {
     products_count: number;
     // Peran user yang sedang login di toko ini; null bila ia bukan anggota.
     role: StoreRole | null;
+    // Toko terarsip: hilang dari daftar biasa, datanya tetap utuh.
+    is_archived: boolean;
 };
 
 export type StoreUser = {
@@ -27,7 +29,13 @@ export type StoreUser = {
 export type Permissions = {
     is_owner: boolean;
     can_create_store: boolean;
+    // Ubah identitas, status, dan arsip toko — wewenang tingkat aplikasi.
+    can_administer_stores: boolean;
+    // Isi toko: dashboard, produk, kategori, transaksi, setting.
     can_manage_current_store: boolean;
+    // Satu-satunya pintu owner ke dalam scope toko.
+    can_manage_current_store_users: boolean;
+    can_operate_current_pos: boolean;
     can_create_admin: boolean;
 };
 

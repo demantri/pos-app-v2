@@ -34,8 +34,9 @@ class RoutesTest extends TestCase
     #[DataProvider('storePages')]
     public function test_authenticated_user_can_open_store_page(string $routeName, string $component, array $props): void
     {
-        $this->actingAs(User::factory()->owner()->create());
         $store = Store::factory()->create();
+        // Admin toko, bukan owner: sejak fase 3 owner tidak boleh membuka isi toko.
+        $this->actingAs($this->storeAdmin($store));
 
         $response = $this->get(route($routeName, ['store' => $store->id]));
 

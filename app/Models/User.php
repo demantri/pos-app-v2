@@ -118,20 +118,45 @@ class User extends Authenticatable
     }
 
     /**
-     * Boleh masuk ke toko ini sama sekali (kasir pun termasuk).
+     * Anggota toko ini — admin atau kasirnya.
+     *
+     * Owner SENGAJA tidak termasuk: sejak fase 3 ia tidak boleh melihat isi
+     * toko sama sekali (transaksi, produk, POS, setting). Wewenangnya berhenti
+     * di tingkat toko: menambah, mengubah identitas, mengatur status, dan
+     * mengarsipkan.
      */
     public function canAccessStore(Store $store): bool
     {
-        return $this->isOwner() || $this->roleIn($store) !== null;
+        return $this->roleIn($store) !== null;
     }
 
     /**
-     * Boleh mengelola isi toko: produk, kategori, transaksi, setting, dan
-     * pengguna toko. Kasir TIDAK termasuk.
+     * Boleh mengelola isi toko: produk, kategori, transaksi, dan setting.
+     * Hanya admin toko — bukan kasir, dan bukan owner.
      */
     public function canManageStore(Store $store): bool
     {
+        return $this->isAdminOf($store);
+    }
+
+    /**
+     * Boleh mengelola pengguna toko ini.
+     *
+     * Owner ikut boleh — dan ini SATU-SATUNYA pintunya ke dalam scope toko.
+     * Tanpa itu toko yang baru dibuat tidak akan pernah punya pengguna, karena
+     * ia belum punya admin yang bisa membuatkannya.
+     */
+    public function canManageStoreUsers(Store $store): bool
+    {
         return $this->isOwner() || $this->isAdminOf($store);
+    }
+
+    /**
+     * Boleh membuat, mengubah, mengarsipkan, dan mengatur status toko.
+     */
+    public function canAdministerStores(): bool
+    {
+        return $this->isOwner();
     }
 
     /**

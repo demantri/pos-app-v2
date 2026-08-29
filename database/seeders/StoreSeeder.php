@@ -27,7 +27,11 @@ class StoreSeeder extends Seeder
         foreach (DemoData::stores() as $storeData) {
             $settings = DemoData::settings($storeData['id']);
 
-            $store = Store::updateOrCreate(
+            // withTrashed(): sejak Store memakai SoftDeletes, toko yang
+            // diarsipkan tidak terlihat oleh query biasa — updateOrCreate akan
+            // mencoba MEMBUAT ulang dan menabrak unique `code`. Toko demo yang
+            // terarsip sekalian dipulihkan supaya hasil seed selalu konsisten.
+            $store = Store::withTrashed()->updateOrCreate(
                 ['code' => $storeData['code']],
                 [
                     'name' => $storeData['name'],
@@ -44,6 +48,10 @@ class StoreSeeder extends Seeder
                     'close_time' => $settings['close_time'],
                 ],
             );
+
+            if ($store->trashed()) {
+                $store->restore();
+            }
 
             $this->seedCategoriesAndProducts($store, $storeData['id']);
         }

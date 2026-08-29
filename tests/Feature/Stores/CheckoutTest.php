@@ -15,8 +15,8 @@ class CheckoutTest extends TestCase
 
     public function test_checkout_rejects_an_empty_cart(): void
     {
-        $this->actingAs(User::factory()->owner()->create());
         $store = Store::factory()->create();
+        $this->actingAs($this->storeAdmin($store));
 
         $this->from(route('stores.pos', ['store' => $store->id]))
             ->post(route('stores.pos.checkout', ['store' => $store->id]), [
@@ -32,8 +32,8 @@ class CheckoutTest extends TestCase
 
     public function test_checkout_rejects_unsupported_payment_method(): void
     {
-        $this->actingAs(User::factory()->owner()->create());
         $store = Store::factory()->create();
+        $this->actingAs($this->storeAdmin($store));
         $product = Product::factory()->create(['store_id' => $store->id, 'price' => 12000, 'stock' => 10]);
 
         $this->from(route('stores.pos', ['store' => $store->id]))
@@ -54,8 +54,8 @@ class CheckoutTest extends TestCase
     {
         // CheckoutRequest tidak punya aturan `max:`; batas yang berlaku di sini
         // adalah `min:` pada qty/price/discount/paid, jadi itu yang diuji.
-        $this->actingAs(User::factory()->owner()->create());
         $store = Store::factory()->create();
+        $this->actingAs($this->storeAdmin($store));
         $product = Product::factory()->create(['store_id' => $store->id]);
 
         $this->from(route('stores.pos', ['store' => $store->id]))

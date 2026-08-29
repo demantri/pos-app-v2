@@ -29,8 +29,8 @@ class StoreContextTest extends TestCase
 
     public function test_current_store_is_shared_inside_a_store_scope(): void
     {
-        $this->actingAs(User::factory()->owner()->create());
         $store = Store::factory()->create(['name' => 'Toko Kelapa Dua']);
+        $this->actingAs($this->storeAdmin($store));
 
         $this->get(route('stores.show', ['store' => $store->id]))
             ->assertOk()

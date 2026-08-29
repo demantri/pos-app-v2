@@ -56,8 +56,15 @@ const currentStore = computed(() => page.props.currentStore!);
 // kasir. Server menegakkan hal yang sama di StoreUserRequest.
 const canCreateAdmin = computed(() => page.props.permissions.can_create_admin);
 
+// Owner boleh membuka layar ini tapi TIDAK dashboard tokonya, jadi remah
+// rotinya mengarah balik ke halaman ini sendiri agar bukan tautan buntu.
 const breadcrumbs = computed<BreadcrumbItem[]>(() => [
-    { title: currentStore.value.name, href: storePath(currentStore.value.id) },
+    {
+        title: currentStore.value.name,
+        href: page.props.permissions.can_manage_current_store
+            ? storePath(currentStore.value.id)
+            : storePath(currentStore.value.id, 'users'),
+    },
     { title: 'Pengguna Toko', href: storePath(currentStore.value.id, 'users') },
 ]);
 

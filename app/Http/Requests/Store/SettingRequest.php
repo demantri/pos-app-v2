@@ -25,6 +25,14 @@ class SettingRequest extends FormRequest
     }
 
     /**
+     * Setelan OPERASIONAL toko — wewenang admin toko.
+     *
+     * Identitas toko (nama, kode, alamat, telepon) dan status aktif SENGAJA
+     * tidak ada di sini sejak fase 3: keduanya wewenang owner dan diubah dari
+     * daftar toko. Kode toko khususnya adalah awalan nomor struk — mengubahnya
+     * membuat penomoran mulai ulang, jadi tidak boleh berada di tangan admin
+     * toko.
+     *
      * @return array<string, mixed>
      */
     public function rules(): array
@@ -34,15 +42,6 @@ class SettingRequest extends FormRequest
         abort_if(! $store instanceof Store, 404);
 
         return [
-            'name' => ['required', 'string', 'max:100'],
-            'code' => [
-                'required',
-                'string',
-                'max:10',
-                Rule::unique('stores', 'code')->ignore($store->getKey()),
-            ],
-            'address' => ['required', 'string', 'max:255'],
-            'phone' => ['required', 'string', 'max:30'],
             'currency' => ['required', 'string', 'max:5'],
             'tax_percent' => ['required', 'numeric', 'min:0', 'max:100'],
             'rounding' => ['required', 'integer', 'min:1'],
@@ -53,7 +52,6 @@ class SettingRequest extends FormRequest
             'paper_size' => ['required', Rule::in(['58mm', '80mm'])],
             'open_time' => ['required', 'date_format:H:i'],
             'close_time' => ['required', 'date_format:H:i'],
-            'is_active' => ['required', 'boolean'],
             'printer_connector' => ['required', Rule::in(['none', 'cups', 'file', 'bluetooth'])],
             // Wajib diisi begitu printernya benar-benar dipakai — kalau
             // kosong, ReceiptPrinter hanya akan gagal saat kasir menekan

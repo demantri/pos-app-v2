@@ -5,7 +5,6 @@ namespace Tests\Feature\Stores;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\Store;
-use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -32,8 +31,8 @@ class ProductValidationTest extends TestCase
 
     public function test_product_requires_core_fields(): void
     {
-        $this->actingAs(User::factory()->owner()->create());
         $store = Store::factory()->create();
+        $this->actingAs($this->storeAdmin($store));
 
         $this->from(route('stores.products.index', ['store' => $store->id]))
             ->post(route('stores.products.store', ['store' => $store->id]), [])
@@ -42,8 +41,8 @@ class ProductValidationTest extends TestCase
 
     public function test_price_and_stock_must_not_be_negative(): void
     {
-        $this->actingAs(User::factory()->owner()->create());
         $store = Store::factory()->create();
+        $this->actingAs($this->storeAdmin($store));
 
         $payload = $this->validPayload();
         $payload['price'] = -1;
@@ -56,8 +55,8 @@ class ProductValidationTest extends TestCase
 
     public function test_product_fields_reject_values_longer_than_their_max_length(): void
     {
-        $this->actingAs(User::factory()->owner()->create());
         $store = Store::factory()->create();
+        $this->actingAs($this->storeAdmin($store));
 
         $payload = $this->validPayload();
         $payload['name'] = str_repeat('a', 121);
@@ -72,8 +71,8 @@ class ProductValidationTest extends TestCase
 
     public function test_valid_product_is_created_updated_and_deleted_in_the_database(): void
     {
-        $this->actingAs(User::factory()->owner()->create());
         $store = Store::factory()->create();
+        $this->actingAs($this->storeAdmin($store));
         $category = Category::factory()->create(['store_id' => $store->id]);
         $from = route('stores.products.index', ['store' => $store->id]);
 
@@ -115,8 +114,8 @@ class ProductValidationTest extends TestCase
 
     public function test_product_of_another_store_cannot_be_touched_through_this_store(): void
     {
-        $this->actingAs(User::factory()->owner()->create());
         $store = Store::factory()->create();
+        $this->actingAs($this->storeAdmin($store));
         $otherStore = Store::factory()->create();
         $foreign = Product::factory()->create(['store_id' => $otherStore->id]);
 

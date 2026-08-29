@@ -46,9 +46,15 @@ class StoreData
      *
      * @return array<int, array<string, mixed>>
      */
-    public static function stores(User $viewer): array
+    public static function stores(User $viewer, bool $archived = false): array
     {
-        return self::visibleQuery($viewer)
+        $query = self::visibleQuery($viewer);
+
+        if ($archived) {
+            $query->onlyTrashed();
+        }
+
+        return $query
             ->withCount('products')
             ->orderBy('id')
             ->get()
@@ -131,6 +137,7 @@ class StoreData
             // global), admin, atau kasir. Dipakai UI untuk menyembunyikan
             // menu yang memang akan ditolak server.
             'role' => $viewer?->roleLabelFor($store),
+            'is_archived' => $store->trashed(),
         ];
     }
 

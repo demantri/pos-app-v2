@@ -5,7 +5,6 @@ namespace Tests\Feature\Stores;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\Store;
-use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -15,8 +14,8 @@ class CategoryValidationTest extends TestCase
 
     public function test_category_requires_a_name(): void
     {
-        $this->actingAs(User::factory()->owner()->create());
         $store = Store::factory()->create();
+        $this->actingAs($this->storeAdmin($store));
 
         $this->from(route('stores.categories.index', ['store' => $store->id]))
             ->post(route('stores.categories.store', ['store' => $store->id]), ['description' => 'tanpa nama'])
@@ -25,8 +24,8 @@ class CategoryValidationTest extends TestCase
 
     public function test_category_fields_reject_values_longer_than_their_max_length(): void
     {
-        $this->actingAs(User::factory()->owner()->create());
         $store = Store::factory()->create();
+        $this->actingAs($this->storeAdmin($store));
 
         $this->from(route('stores.categories.index', ['store' => $store->id]))
             ->post(route('stores.categories.store', ['store' => $store->id]), [
@@ -38,8 +37,8 @@ class CategoryValidationTest extends TestCase
 
     public function test_category_is_created_updated_and_deleted_in_the_database(): void
     {
-        $this->actingAs(User::factory()->owner()->create());
         $store = Store::factory()->create();
+        $this->actingAs($this->storeAdmin($store));
         $index = route('stores.categories.index', ['store' => $store->id]);
 
         $this->from($index)
@@ -75,8 +74,8 @@ class CategoryValidationTest extends TestCase
 
     public function test_deleting_a_category_keeps_its_products_but_clears_their_grouping(): void
     {
-        $this->actingAs(User::factory()->owner()->create());
         $store = Store::factory()->create();
+        $this->actingAs($this->storeAdmin($store));
         $category = Category::factory()->create(['store_id' => $store->id]);
         $product = Product::factory()->create([
             'store_id' => $store->id,

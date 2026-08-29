@@ -27,12 +27,15 @@ class ResolveStore
         // yang terbinding tidak boleh diam-diam lolos tanpa konteks toko.
         abort_if(! $store instanceof Store, 404);
 
-        // Hak akses paling dasar: user harus owner atau anggota toko ini.
-        // Pembedaan admin vs kasir dilakukan policy di masing-masing rute
-        // (lihat App\Policies\StorePolicy dan routes/web.php).
+        // Saringan paling dasar: user harus anggota toko ini, ATAU owner.
+        // Owner tetap diloloskan di sini semata-mata supaya rute
+        // stores/{store}/users terjangkau olehnya — pembedaan selebihnya
+        // (admin vs kasir vs owner) dilakukan policy di masing-masing rute.
+        // Kalau owner ditolak di lapisan ini, layar Pengguna Toko ikut mati
+        // dan toko baru tidak akan pernah punya pengguna pertama.
         $user = $request->user();
 
-        abort_if($user === null || ! $user->canAccessStore($store), 403);
+        abort_if($user === null || ! ($user->isOwner() || $user->canAccessStore($store)), 403);
 
         $request->attributes->set('store', $store);
 

@@ -29,6 +29,7 @@ class StoreValidationTest extends TestCase
                 'code' => str_repeat('a', 11),
                 'address' => str_repeat('a', 256),
                 'phone' => str_repeat('1', 31),
+                'is_active' => true,
             ])
             ->assertSessionHasErrors(['name', 'code', 'address', 'phone']);
     }
@@ -43,6 +44,7 @@ class StoreValidationTest extends TestCase
                 'code' => 'TBR',
                 'address' => 'Jl. Percobaan No. 1',
                 'phone' => '021-5550000',
+                'is_active' => true,
             ])
             ->assertRedirect(route('stores.index'))
             ->assertSessionHas('success');

@@ -62,12 +62,18 @@ class HandleInertiaRequests extends Middleware
                 $user = $request->user();
                 $store = $request->attributes->get('store');
 
+                $inStore = $user !== null && $store instanceof Store;
+
                 return [
                     'is_owner' => $user?->isOwner() ?? false,
                     'can_create_store' => $user?->isOwner() ?? false,
-                    'can_manage_current_store' => $user !== null && $store instanceof Store
-                        ? $user->canManageStore($store)
-                        : false,
+                    // Wewenang tingkat aplikasi: ubah identitas, status, arsip.
+                    'can_administer_stores' => $user?->canAdministerStores() ?? false,
+                    // Isi toko — sejak fase 3 hanya admin toko, owner tidak.
+                    'can_manage_current_store' => $inStore && $user->canManageStore($store),
+                    // Satu-satunya pintu owner ke dalam scope toko.
+                    'can_manage_current_store_users' => $inStore && $user->canManageStoreUsers($store),
+                    'can_operate_current_pos' => $inStore && $user->canAccessStore($store),
                     'can_create_admin' => $user?->isOwner() ?? false,
                 ];
             },

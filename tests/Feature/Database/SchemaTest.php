@@ -59,7 +59,14 @@ class SchemaTest extends TestCase
         $this->assertTrue($user->stores->contains($store));
     }
 
-    public function test_deleting_a_store_cascades_to_its_categories_products_and_transactions(): void
+    /**
+     * Store memakai SoftDeletes sejak fase 3, jadi delete() biasa TIDAK lagi
+     * menyentuh baris di database — justru itu maksudnya: mengarsipkan toko
+     * tidak boleh menghapus riwayat transaksinya. Cascade di tingkat foreign
+     * key tetap ada dan tetap berlaku untuk penghapusan sungguhan, dan itulah
+     * yang diuji di sini dengan forceDelete().
+     */
+    public function test_force_deleting_a_store_cascades_to_its_categories_products_and_transactions(): void
     {
         $store = Store::factory()->create();
         $category = Category::factory()->create(['store_id' => $store->id]);
@@ -67,6 +74,12 @@ class SchemaTest extends TestCase
         $transaction = Transaction::factory()->create(['store_id' => $store->id]);
 
         $store->delete();
+
+        // Arsip: barisnya masih ada, hanya ditandai terhapus.
+        $this->assertDatabaseHas('stores', ['id' => $store->id]);
+        $this->assertDatabaseHas('transactions', ['id' => $transaction->id]);
+
+        $store->forceDelete();
 
         $this->assertDatabaseMissing('categories', ['id' => $category->id]);
         $this->assertDatabaseMissing('products', ['id' => $product->id]);

@@ -38,12 +38,18 @@ const mainNavItems = computed<NavItem[]>(() => {
 
     const storeList: NavItem = { title: 'Daftar Toko', href: '/stores', icon: StoreIcon };
     const pos: NavItem = { title: 'POS', href: storePath(store.id, 'pos'), icon: ScanBarcode };
+    const users: NavItem = { title: 'Pengguna Toko', href: storePath(store.id, 'users'), icon: Users };
+    const permissions = page.props.permissions;
 
-    // Kasir hanya punya layar POS di toko ini — menu lain memang akan
-    // ditolak server (lihat routes/web.php: can:manage,store), jadi tidak
-    // ditampilkan sama sekali.
-    if (! page.props.permissions.can_manage_current_store) {
-        return [pos, storeList];
+    // Menu mengikuti peran, dan hanya menampilkan yang memang akan diizinkan
+    // server (lihat routes/web.php). Owner sengaja TIDAK melihat POS maupun
+    // menu isi toko — sejak fase 3 ia hanya boleh mengurus penggunanya.
+    if (! permissions.can_manage_current_store) {
+        return [
+            ...(permissions.can_operate_current_pos ? [pos] : []),
+            ...(permissions.can_manage_current_store_users ? [users] : []),
+            storeList,
+        ];
     }
 
     return [
@@ -52,7 +58,7 @@ const mainNavItems = computed<NavItem[]>(() => {
         { title: 'Produk', href: storePath(store.id, 'products'), icon: Package },
         { title: 'Kategori', href: storePath(store.id, 'categories'), icon: Tags },
         { title: 'Transaksi', href: storePath(store.id, 'transactions'), icon: Receipt },
-        { title: 'Pengguna Toko', href: storePath(store.id, 'users'), icon: Users },
+        users,
         { title: 'Setting Toko', href: storePath(store.id, 'settings'), icon: Settings },
         storeList,
     ];

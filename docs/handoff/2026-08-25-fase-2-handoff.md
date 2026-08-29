@@ -26,8 +26,8 @@ sama bila butuh alasan di balik tiap keputusan.
 | T5 | **Checkout benar-benar menyimpan + potong stok** | ✅ selesai (2026-08-29) |
 | T6 | Endpoint tulis lain (toko/kategori/produk/setting) + upload gambar produk | ✅ selesai (2026-08-29) |
 | T7 | Role owner/admin/kasir + otorisasi + layar kelola pengguna toko | ✅ selesai (2026-08-29) |
-| T8 | Rapikan test, buang label demo, README | sebagian — label demo sudah hilang, README belum |
-| Fase 3 | Perombakan role & permission (superadmin tidak lagi bisa masuk ke dalam toko) | disetujui, **belum dikerjakan** — lihat §5d |
+| T8 | Rapikan test, buang label demo, README | ✅ selesai (2026-08-29) |
+| Fase 3 | Perombakan role & permission (owner tidak lagi bisa masuk ke dalam toko) | ✅ selesai (2026-08-29) — lihat §5d |
 
 > Urutan T5/T6 sengaja ditukar dari rencana awal: user meminta jalur transaksi hidup lebih dulu.
 
@@ -301,10 +301,10 @@ memperlihatkan toast hijau "Nota uji dikirim ke printer.", toast merah berisi pe
 tidak ditemukan, dan checkout POS yang memunculkan keduanya sekaligus di atas dialog struk
 bernomor asli.
 
-## 5d. FASE 3 — perombakan role & permission (DISETUJUI, BELUM DIKERJAKAN)
+## 5d. FASE 3 — perombakan role & permission (SELESAI 2026-08-29)
 
-Diminta user 2026-08-29 di akhir sesi. Rencananya sudah disetujui sampai tahap desain; **tidak
-ada satu baris kode pun yang sudah ditulis untuk bagian ini.** Mulailah dari sini.
+Diminta user 2026-08-29, dikerjakan pada sesi yang sama. Rencana di bawah ini sudah
+terlaksana seluruhnya; bukti verifikasinya ada di akhir bagian ini.
 
 ### Perubahan intinya
 
@@ -366,7 +366,25 @@ hanya bisa menambah, edit, dan merubah status tokonya (aktif/tidak aktif)"*.
 - **Remah roti** di layar Pengguna Toko masih menunjuk dashboard toko (`storePath($id)`) yang
   akan 403 bagi superadmin — samakan polanya dengan yang sudah dilakukan di layar POS.
 
-### Dampak ke test (diperkirakan enam berkas)
+### Hasil verifikasi runtime (2026-08-29, `php artisan serve`)
+
+| Akun | `/stores` | dashboard | POS | produk | transaksi | setting | pengguna | ubah toko | arsip toko |
+|---|---|---|---|---|---|---|---|---|---|
+| owner | 200 | **403** | **403** | **403** | **403** | **403** | 200 | 303 | 303 |
+| admin toko | 200 | 200 | 200 | 200 | 200 | 200 | 200 | **403** | **403** |
+| kasir | 200 | **403** | 200 | **403** | **403** | **403** | **403** | **403** | **403** |
+
+Arsip terbukti aman: setelah Toko Serpong diarsipkan, 26 produk dan 10 transaksinya tetap ada
+di database, tokonya hilang dari daftar biasa, muncul di `/stores?archived=1`, dan tidak bisa
+dibuka (404). Pemulihan lewat `PUT /stores/{id}/restore` mengembalikannya; kasir yang mencoba
+memulihkan ditolak 403.
+
+**Efek samping soft delete yang ikut ditutup:** `StoreSeeder` memakai `updateOrCreate` pada
+`code`, dan toko terarsip tidak terlihat oleh query biasa — seed ulang akan mencoba MEMBUAT
+ulang dan menabrak unique `code`. Sekarang lookup-nya `withTrashed()` dan toko demo yang
+terarsip sekalian dipulihkan. Diuji: arsipkan toko, `db:seed`, hasilnya tetap 3 toko.
+
+### Dampak ke test (terjadi persis seperti perkiraan: enam berkas)
 
 `RoutesTest`, `StoreContextTest`, `CategoryValidationTest`, `ProductValidationTest`,
 `SettingValidationTest`, dan sebagian `CheckoutTest` memakai `User::factory()->owner()` untuk
@@ -375,6 +393,11 @@ menjadi admin toko sungguhan (user + baris pivot `store_user`). `SettingValidati
 memuat assertion untuk `name`/`code`/`address`/`phone`/`is_active` yang aturannya akan hilang.
 Ini memperbarui test yang jadi usang karena perilaku sengaja berubah — bukan menulis test baru,
 jadi tetap sejalan dengan arahan user.
+
+Yang dikerjakan: `Tests\TestCase` mendapat dua helper (`storeAdmin()`, `storeCashier()`) supaya
+test tidak mengulang pembuatan user + baris pivot. Satu test lagi ikut usang di luar perkiraan —
+`SchemaTest::test_deleting_a_store_cascades...`: `delete()` kini soft delete, jadi cascade-nya
+diuji dengan `forceDelete()`, sekaligus membuktikan arsip TIDAK menyentuh riwayat transaksi.
 
 ## 6. Catatan T4 (jalur baca) — sudah dikerjakan, disimpan sebagai rujukan
 

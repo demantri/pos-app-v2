@@ -37,7 +37,24 @@ const breadcrumbs = computed<BreadcrumbItem[]>(() => [
     { title: 'Setting Toko', href: storePath(currentStore.value.id, 'settings') },
 ]);
 
-const form = useForm({ ...props.settings });
+// Hanya field OPERASIONAL. Identitas toko (nama, kode, alamat, telepon) dan
+// status aktif sudah pindah jadi wewenang owner di daftar toko sejak fase 3 —
+// mengirimkannya dari sini hanya akan diabaikan server.
+const form = useForm({
+    currency: props.settings.currency,
+    tax_percent: props.settings.tax_percent,
+    rounding: props.settings.rounding,
+    receipt_header: props.settings.receipt_header,
+    receipt_footer: props.settings.receipt_footer,
+    paper_size: props.settings.paper_size,
+    open_time: props.settings.open_time,
+    close_time: props.settings.close_time,
+    printer_connector: props.settings.printer_connector,
+    printer_target: props.settings.printer_target,
+    printer_channel: props.settings.printer_channel,
+    printer_feed_lines: props.settings.printer_feed_lines,
+    printer_auto_print: props.settings.printer_auto_print,
+});
 
 function submit(): void {
     form.put(storePath(currentStore.value.id, 'settings'), { preserveScroll: true });
@@ -104,40 +121,12 @@ function printTest(): void {
                 <div>
                     <h1 class="text-2xl font-semibold tracking-tight">Setting Toko</h1>
                     <p class="text-muted-foreground text-sm">
-                        Pengaturan {{ currentStore.name }}.
+                        Pengaturan {{ currentStore.name }}. Nama, kode, alamat, dan status toko
+                        diatur pemilik aplikasi dari Daftar Toko.
                     </p>
                 </div>
                 <Button type="submit" :disabled="form.processing">Simpan Perubahan</Button>
             </div>
-
-            <Card>
-                <CardHeader>
-                    <CardTitle>Identitas</CardTitle>
-                    <CardDescription>Nama dan alamat yang tercetak di struk.</CardDescription>
-                </CardHeader>
-                <CardContent class="grid gap-4 sm:grid-cols-2">
-                    <div class="grid gap-2">
-                        <Label for="setting-name">Nama toko</Label>
-                        <Input id="setting-name" v-model="form.name" />
-                        <InputError :message="form.errors.name" />
-                    </div>
-                    <div class="grid gap-2">
-                        <Label for="setting-code">Kode toko</Label>
-                        <Input id="setting-code" v-model="form.code" />
-                        <InputError :message="form.errors.code" />
-                    </div>
-                    <div class="grid gap-2 sm:col-span-2">
-                        <Label for="setting-address">Alamat</Label>
-                        <Textarea id="setting-address" v-model="form.address" />
-                        <InputError :message="form.errors.address" />
-                    </div>
-                    <div class="grid gap-2">
-                        <Label for="setting-phone">Telepon</Label>
-                        <Input id="setting-phone" v-model="form.phone" />
-                        <InputError :message="form.errors.phone" />
-                    </div>
-                </CardContent>
-            </Card>
 
             <Card>
                 <CardHeader>
@@ -308,9 +297,9 @@ function printTest(): void {
             <Card>
                 <CardHeader>
                     <CardTitle>Operasional</CardTitle>
-                    <CardDescription>Jam layanan dan status toko.</CardDescription>
+                    <CardDescription>Jam layanan toko.</CardDescription>
                 </CardHeader>
-                <CardContent class="grid gap-4 sm:grid-cols-3">
+                <CardContent class="grid gap-4 sm:grid-cols-2">
                     <div class="grid gap-2">
                         <Label for="setting-open">Jam buka</Label>
                         <Input id="setting-open" v-model="form.open_time" type="time" />
@@ -320,10 +309,6 @@ function printTest(): void {
                         <Label for="setting-close">Jam tutup</Label>
                         <Input id="setting-close" v-model="form.close_time" type="time" />
                         <InputError :message="form.errors.close_time" />
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <Switch id="setting-active" v-model="form.is_active" />
-                        <Label for="setting-active">Toko aktif</Label>
                     </div>
                 </CardContent>
             </Card>
