@@ -44,6 +44,7 @@ export type StoreOption = {
     id: string;
     name: string;
     code: string;
+    role: StoreRole | null;
 };
 
 export type Category = {
@@ -153,4 +154,48 @@ export type CartItem = {
     price: number;
     qty: number;
     discount: number;
+};
+
+/**
+ * Angka dan sorotan dashboard owner aplikasi. Sengaja tanpa data transaksi —
+ * owner tidak boleh melihat penjualan toko yang sudah terdaftar.
+ */
+export type OverviewStats = {
+    stores: { active: number; inactive: number; archived: number };
+    users: { total: number; owners: number; admins: number; cashiers: number };
+};
+
+export type HighlightStore = {
+    id: string;
+    name: string;
+    code: string;
+};
+
+export type HighlightUser = {
+    id: string;
+    name: string;
+    email: string;
+};
+
+export type OverviewHighlights = {
+    stores_without_users: { count: number; items: HighlightStore[] };
+    inactive_stores: { count: number; items: HighlightStore[] };
+    archived_stores: { count: number; items: HighlightStore[] };
+    users_without_stores: { count: number; items: HighlightUser[] };
+};
+
+export type AppUserStore = {
+    id: string;
+    name: string;
+    code: string;
+    role: 'admin' | 'kasir' | null;
+};
+
+export type AppUser = {
+    id: string;
+    name: string;
+    email: string;
+    is_owner: boolean;
+    created_at: string;
+    stores: AppUserStore[];
 };

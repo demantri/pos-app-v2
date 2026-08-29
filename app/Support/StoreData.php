@@ -80,6 +80,10 @@ class StoreData
                 'id' => $store->ulid,
                 'name' => $store->name,
                 'code' => $store->code,
+                // Perannya ikut supaya pemilih toko tahu halaman mana yang
+                // boleh dibuka di toko tujuan — akar toko 403 bagi kasir
+                // maupun owner.
+                'role' => $viewer->roleLabelFor($store),
             ])
             ->all();
     }

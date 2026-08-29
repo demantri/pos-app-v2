@@ -585,6 +585,46 @@ ke layar masuk, pengguna yang sudah masuk dialihkan ke `dashboard`.
 Diverifikasi: tamu `/` → `/login`; kasir yang sudah masuk `/` → `/dashboard` →
 `/stores/{ULID}/pos`.
 
+## 5j. Dashboard owner + daftar pengguna aplikasi (2026-08-29)
+
+Permintaan user: dashboard untuk owner berisi total user, total toko, dan kebutuhan lain untuk
+dikelola. Keputusan yang diambil user saat ditanya:
+
+1. **Halaman sendiri** (`/overview`), dan owner mendarat di sana setelah login — bukan lagi di
+   Daftar Toko.
+2. **Tanpa angka transaksi sama sekali**, baik jumlah maupun omzet. Ini menjaga aturan fase 3:
+   owner tidak boleh melihat penjualan toko yang sudah terdaftar.
+3. Ditambah **daftar seluruh akun aplikasi** dan **kartu sorotan toko yang perlu
+   ditindaklanjuti**. Ringkasan produk/stok per toko sengaja TIDAK dipilih.
+
+Wewenangnya memakai Gate `administer-app` (bukan StorePolicy — ini wewenang tingkat aplikasi,
+tidak punya model toko untuk disandarkan).
+
+Sorotan yang ditampilkan: toko tanpa pengguna (kondisi paling penting — toko baru selalu di
+sana dan tidak bisa dibuka siapa pun), akun tanpa toko, toko nonaktif, dan toko terarsip.
+
+`/users` hanya bisa menghapus akun; pengaturan peran tetap di `stores/{store}/users` supaya
+tidak ada dua tempat yang bisa berbeda. Dua penjaga: tidak bisa menghapus akun sendiri, dan
+konfirmasi. Riwayat transaksi tidak ikut hilang (`user_id` nullOnDelete + snapshot nama kasir).
+
+### DUA BUG yang justru terungkap karena owner kini mendarat di luar toko
+
+1. **Pemilih toko mengarah ke halaman 403.** `hrefFor()` menautkan ke `/stores/{id}` + subpath
+   saat ini, padahal akar toko adalah dashboard yang 403 bagi kasir MAUPUN owner. Diperbaiki:
+   perpindahan toko kini selalu mendarat di halaman yang boleh dibuka di toko TUJUAN, lewat
+   helper `storeEntryPath()` yang dipakai bersama daftar toko. `storeOptions` ikut membawa
+   `role`.
+2. **Fitur "pertahankan halaman saat pindah toko" sudah mati sejak URL memakai ULID.** Regex-nya
+   masih `^\/stores\/\d+` yang tidak pernah lagi cocok. Tidak ada test yang menangkapnya; baru
+   ketahuan saat membaca kodenya untuk memperbaiki bug pertama. Fitur itu sekarang memang
+   dihapus, bukan diperbaiki — peran seseorang bisa berbeda antar toko, jadi membawa halaman
+   saat ini gampang berakhir 403.
+
+**Diverifikasi:** `/overview` dan `/users` 200 untuk owner, 403 untuk admin toko dan kasir;
+owner mendarat di `/overview` setelah login sedangkan admin/kasir tetap ke tokonya; pemilih
+toko milik owner mendarat di layar Pengguna Toko; penghapusan akun sendiri ditolak dengan pesan
+yang benar dan jumlah akun tidak berubah.
+
 ## 6. Catatan T4 (jalur baca) — sudah dikerjakan, disimpan sebagai rujukan
 
 - Ganti pemanggilan `DemoData::*` di controller dengan query Eloquent. `products_count` /

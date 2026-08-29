@@ -125,6 +125,23 @@ ditambahkan paling bawah dan tidak bisa diubah toko.
 Emoji tidak bisa dicetak printer ESC/POS — ia keluar sebagai `?`. Pakai
 karakter ASCII untuk hiasan.
 
+## Dashboard owner
+
+Owner mendarat di `/overview` setelah login. Isinya jumlah toko (aktif,
+nonaktif, terarsip) dan pengguna (owner, admin toko, kasir), plus kartu sorotan
+yang perlu ditindaklanjuti — terutama **toko yang belum punya pengguna**, karena
+toko seperti itu tidak bisa dibuka siapa pun sampai owner membuatkan adminnya.
+
+Halaman ini **sengaja tidak memuat satu pun angka transaksi**, baik jumlah
+maupun omzet: owner tidak boleh melihat penjualan toko yang sudah terdaftar, dan
+dashboard bukan pintu belakang untuk itu.
+
+`/users` berisi seluruh akun beserta peran dan tokonya. Aksinya hanya menghapus
+akun — pengaturan peran tetap di layar Pengguna Toko masing-masing, supaya tidak
+ada dua tempat yang bisa berbeda. Menghapus akun **tidak menghapus riwayat
+transaksinya**: `transactions.user_id` memakai `nullOnDelete` dan nama kasir
+disimpan sebagai snapshot di struk.
+
 ## Halaman masuk
 
 Layar autentikasi memakai `layouts/auth/AuthPhotoLayout.vue`: foto suasana kasir
@@ -158,6 +175,8 @@ sehingga produk lama tidak tiba-tiba jadi berisik.
 | URL | Isi | Siapa |
 |---|---|---|
 | `/` | Tidak merender apa pun — tamu dialihkan ke layar masuk, yang sudah login ke tempat kerjanya | semua |
+| `/overview` | Dashboard owner: jumlah toko & pengguna, sorotan yang perlu ditindaklanjuti | owner |
+| `/users` | Seluruh akun aplikasi beserta peran dan tokonya | owner |
 | `/stores` | Daftar toko, tambah/ubah/arsip toko | semua (isinya difilter) |
 | `/stores?archived=1` | Toko terarsip, bisa dipulihkan | owner |
 | `/stores/{id}` | Dashboard toko | admin toko |

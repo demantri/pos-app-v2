@@ -11,7 +11,7 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { SidebarMenuButton } from '@/components/ui/sidebar';
-import { storePath } from '@/lib/store-path';
+import { storeEntryPath } from '@/lib/store-path';
 import type { StoreOption } from '@/types';
 
 const page = usePage();
@@ -20,17 +20,16 @@ const currentStore = computed(() => page.props.currentStore);
 const storeOptions = computed(() => page.props.storeOptions);
 
 /**
- * Sisa URL setelah `/stores/{id}` — dipakai agar perpindahan toko
- * mempertahankan halaman yang sedang dibuka.
+ * Perpindahan toko selalu mendarat di halaman yang boleh dibuka di toko
+ * TUJUAN, bukan di halaman yang sedang dibuka.
+ *
+ * Peran seseorang bisa berbeda antar toko — admin di satu toko, kasir di toko
+ * lain — jadi membawa serta halaman saat ini gampang berakhir 403. Versi
+ * sebelumnya juga mencocokkan URL dengan pola `\d+` yang tidak pernah lagi
+ * cocok sejak URL memakai ULID, sehingga fitur itu memang sudah mati.
  */
-const currentSubPath = computed(() => {
-    const match = page.url.match(/^\/stores\/\d+\/?(.*)$/);
-
-    return match ? (match[1] ?? '') : '';
-});
-
 function hrefFor(option: StoreOption): string {
-    return storePath(option.id, currentSubPath.value);
+    return storeEntryPath(option.id, option.role);
 }
 
 /**

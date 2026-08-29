@@ -3,9 +3,11 @@
 namespace App\Providers;
 
 use App\Models\Store;
+use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
@@ -27,6 +29,16 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->configureDefaults();
         $this->configureRouteBindings();
+        $this->configureGates();
+    }
+
+    /**
+     * Wewenang tingkat aplikasi — bukan tingkat toko, jadi tidak punya model
+     * untuk disandarkan ke StorePolicy.
+     */
+    protected function configureGates(): void
+    {
+        Gate::define('administer-app', fn (User $user): bool => $user->canAdministerStores());
     }
 
     /**

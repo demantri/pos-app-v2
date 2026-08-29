@@ -35,7 +35,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import AppLayout from '@/layouts/AppLayout.vue';
-import { storePath } from '@/lib/store-path';
+import { storeEntryPath, storePath } from '@/lib/store-path';
 import type { BreadcrumbItem, Store } from '@/types';
 
 defineProps<{ stores: Store[]; showingArchived: boolean }>();
@@ -53,16 +53,8 @@ const roleLabels: Record<string, string> = {
     kasir: 'Kasir',
 };
 
-/**
- * Tujuan tombol "Buka" mengikuti peran: kasir langsung ke layar POS, dan owner
- * ke layar pengguna — dua-duanya tidak boleh membuka dashboard toko.
- */
 function entryPath(store: Store): string {
-    if (store.role === 'kasir') {
-        return storePath(store.id, 'pos');
-    }
-
-    return store.role === 'owner' ? storePath(store.id, 'users') : storePath(store.id);
+    return storeEntryPath(store.id, store.role);
 }
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Daftar Toko', href: '/stores' }];

@@ -21,10 +21,10 @@ class EntryPointController extends Controller
         /** @var User $user Rute ini selalu di bawah middleware auth. */
         $user = $request->user();
 
-        // Owner mengurus banyak toko dan tidak punya halaman kerja di dalam
-        // toko, jadi daftar toko memang tempatnya.
+        // Owner tidak punya halaman kerja di dalam toko; tempatnya dashboard
+        // tingkat aplikasi.
         if ($user->isOwner()) {
-            return redirect()->route('stores.index');
+            return redirect()->route('overview');
         }
 
         $stores = $user->stores;

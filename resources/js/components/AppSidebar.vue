@@ -42,6 +42,16 @@ const mainNavItems = computed<NavItem[]>(() => {
     const storeList: NavItem = { title: 'Daftar Toko', href: '/stores', icon: StoreIcon };
 
     if (! store) {
+        // Di luar konteks toko, owner aplikasi punya dua halaman miliknya
+        // sendiri: dashboard tingkat aplikasi dan daftar seluruh akun.
+        if (page.props.permissions.can_administer_stores) {
+            return [
+                { title: 'Dashboard', href: '/overview', icon: LayoutGrid },
+                storeList,
+                { title: 'Pengguna', href: '/users', icon: Users },
+            ];
+        }
+
         return [storeList];
     }
 

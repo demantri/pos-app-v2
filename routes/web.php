@@ -1,6 +1,8 @@
 <?php
 
+use App\Http\Controllers\AppUserController;
 use App\Http\Controllers\EntryPointController;
+use App\Http\Controllers\OverviewController;
 use App\Http\Controllers\Store\CategoryController;
 use App\Http\Controllers\Store\DashboardController;
 use App\Http\Controllers\Store\PosController;
@@ -22,6 +24,14 @@ Route::get('/', fn (Request $request) => redirect()->route($request->user() ? 'd
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', EntryPointController::class)->name('dashboard');
+
+    // Dashboard owner aplikasi + daftar seluruh akun. Sengaja di luar scope
+    // toko: keduanya bukan urusan sebuah toko, melainkan aplikasinya.
+    Route::middleware('can:administer-app')->group(function () {
+        Route::get('overview', OverviewController::class)->name('overview');
+        Route::get('users', [AppUserController::class, 'index'])->name('users.index');
+        Route::delete('users/{user}', [AppUserController::class, 'destroy'])->name('users.destroy');
+    });
 
     Route::get('stores', [StoreController::class, 'index'])->name('stores.index');
 
