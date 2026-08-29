@@ -41,6 +41,12 @@ class StoreData
     private const RECENT_LIMIT = 5;
 
     /**
+     * Berapa produk menipis yang dirinci di kartu dashboard. Jumlah totalnya
+     * tetap dilaporkan utuh — yang dibatasi hanya daftarnya.
+     */
+    private const LOW_STOCK_LIMIT = 8;
+
+    /**
      * Toko yang boleh dilihat user ini: owner melihat semua, selain owner
      * hanya toko tempat ia terdaftar sebagai admin/kasir.
      *
@@ -181,6 +187,7 @@ class StoreData
                 'category' => $product->category?->name ?? self::UNCATEGORIZED,
                 'price' => $product->price,
                 'stock' => $product->stock,
+                'min_stock' => $product->min_stock,
                 'unit' => $product->unit,
                 'is_active' => $product->is_active,
                 'image_url' => ProductImage::url($product->image_path),
@@ -224,11 +231,32 @@ class StoreData
             ->whereIn('transaction_id', $today->pluck('id'))
             ->sum('qty');
 
+        // Produk yang stoknya sudah menyentuh ambang peringatan tokonya.
+        // min_stock 0 berarti tidak diawasi, jadi dikecualikan — kalau tidak,
+        // semua produk habis ikut terhitung menipis.
+        $lowStockQuery = $store->products()
+            ->where('is_active', true)
+            ->where('min_stock', '>', 0)
+            ->whereColumn('stock', '<=', 'min_stock')
+            ->orderBy('stock');
+
         return [
             'sales_today' => $total,
             'transactions_today' => $count,
             'items_sold' => $itemsSold,
             'average_per_transaction' => $count > 0 ? (int) round($total / $count) : 0,
+            'low_stock_count' => (clone $lowStockQuery)->count(),
+            'low_stock' => $lowStockQuery
+                ->limit(self::LOW_STOCK_LIMIT)
+                ->get(['id', 'name', 'stock', 'min_stock', 'unit'])
+                ->map(static fn (Product $product): array => [
+                    'id' => $product->id,
+                    'name' => $product->name,
+                    'stock' => $product->stock,
+                    'min_stock' => $product->min_stock,
+                    'unit' => $product->unit,
+                ])
+                ->all(),
             'recent_transactions' => self::historyQuery($store)
                 ->limit(self::RECENT_LIMIT)
                 ->get()

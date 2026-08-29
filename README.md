@@ -107,6 +107,22 @@ ditambahkan paling bawah dan tidak bisa diubah toko.
 Emoji tidak bisa dicetak printer ESC/POS — ia keluar sebagai `?`. Pakai
 karakter ASCII untuk hiasan.
 
+## Peringatan stok menipis
+
+Setiap produk punya **Stok minimal** (`products.min_stock`). Begitu stok menyentuh
+angka itu, produknya ditandai di tiga tempat: kartu produk di layar POS, tabel
+Master Produk (plus filter "Stok menipis"), dan kartu ringkasan di dashboard toko.
+
+Saat kasir menambahkan produk seperti itu ke keranjang, muncul notifikasi yang
+memakai sisa stok **setelah transaksi ini** — bukan angka di database — karena
+itu yang relevan baginya. Notifikasinya muncul sekali per produk per keranjang.
+
+Ini murni peringatan: kasir tetap bisa menyelesaikan transaksi. Penolakan
+sungguhan hanya terjadi kalau stok memang tidak cukup.
+
+Isi **0** untuk mematikan peringatan pada sebuah produk — itu juga nilai bawaan,
+sehingga produk lama tidak tiba-tiba jadi berisik.
+
 ## Peta halaman
 
 | URL | Isi | Siapa |

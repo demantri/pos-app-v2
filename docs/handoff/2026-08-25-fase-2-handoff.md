@@ -399,6 +399,41 @@ test tidak mengulang pembuatan user + baris pivot. Satu test lagi ikut usang di 
 `SchemaTest::test_deleting_a_store_cascades...`: `delete()` kini soft delete, jadi cascade-nya
 diuji dengan `forceDelete()`, sekaligus membuktikan arsip TIDAK menyentuh riwayat transaksi.
 
+## 5e. Peringatan stok menipis (2026-08-29)
+
+Diminta user: *"disetiap produk, tambahkan minimal stoknya. agar jika sudah mendekati min
+stoknya, ada notif sebelum transaksi"*.
+
+Kolom `products.min_stock`, bawaan **0 = tanpa peringatan** — supaya produk lama tidak
+tiba-tiba berisik setelah migration, dan toko bisa memilih sendiri barang mana yang diawasi.
+
+Ambangnya sengaja **dua macam**, sesuai pilihan user:
+
+- **Penanda** (kartu POS, tabel produk, dashboard) memakai stok sekarang: `stock <= min_stock`.
+- **Notifikasi di POS** memakai sisa SETELAH transaksi ini: `stock - qty di keranjang <= min_stock`.
+  Yang relevan bagi kasir bukan angka di database, melainkan berapa yang tersisa begitu
+  keranjang ini dibayar.
+
+Notifikasi muncul **sekali per produk per keranjang** (di-reset saat transaksi baru); tanpa itu
+kasir yang menambah sepuluh batang rokok yang sama akan dihujani sepuluh notifikasi.
+
+Sifatnya murni peringatan — kasir tetap bisa menyelesaikan transaksi. Penolakan sungguhan tetap
+hanya terjadi bila stok memang tidak cukup, seperti sebelumnya.
+
+Ikut ditambahkan: label **"Habis"** untuk stok 0 di kartu POS dan tabel produk. Produk semacam
+itu bisa masuk keranjang lalu ditolak server saat bayar, jadi kasir sebaiknya tahu lebih awal.
+
+Kartu placeholder "Grafik penjualan" di dashboard (yang masih berbunyi "menunggu data transaksi
+nyata (fase 2)") DIGANTI kartu Stok menipis — teksnya sudah usang dan slotnya pas.
+
+**Diverifikasi di browser sungguhan:** badge "Stok menipis" di kartu POS, notifikasi
+*"Stok Teh Kotak Original tinggal 10 botol setelah transaksi ini (minimal 15)"*, badge di tabel
+produk untuk dua produk, dan kartu dashboard yang merinci `11 / 15 botol`. Ambangnya disetel
+lewat endpoint produk sungguhan, jadi field barunya ikut terbukti tersimpan.
+
+**Catatan data dev:** Teh Kotak Original di Toko Sudirman sengaja ditinggalkan dengan
+`min_stock` 15 supaya fiturnya langsung terlihat. Seeder memberi seluruh produk demo ambang 5.
+
 ## 6. Catatan T4 (jalur baca) — sudah dikerjakan, disimpan sebagai rujukan
 
 - Ganti pemanggilan `DemoData::*` di controller dengan query Eloquent. `products_count` /

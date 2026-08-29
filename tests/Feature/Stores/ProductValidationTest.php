@@ -24,6 +24,7 @@ class ProductValidationTest extends TestCase
             'category_id' => $categoryId ?? 101,
             'price' => 12000,
             'stock' => 25,
+            'min_stock' => 5,
             'unit' => 'pcs',
             'is_active' => true,
         ];
@@ -36,7 +37,7 @@ class ProductValidationTest extends TestCase
 
         $this->from(route('stores.products.index', ['store' => $store->id]))
             ->post(route('stores.products.store', ['store' => $store->id]), [])
-            ->assertSessionHasErrors(['name', 'sku', 'category_id', 'price', 'stock', 'unit', 'is_active']);
+            ->assertSessionHasErrors(['name', 'sku', 'category_id', 'price', 'stock', 'min_stock', 'unit', 'is_active']);
     }
 
     public function test_price_and_stock_must_not_be_negative(): void
@@ -87,6 +88,7 @@ class ProductValidationTest extends TestCase
             'name' => 'Kopi Susu Gula Aren',
             'price' => 12000,
             'stock' => 25,
+            'min_stock' => 5,
         ]);
 
         $product = Product::query()->where('store_id', $store->id)->where('sku', 'SDR-999')->firstOrFail();

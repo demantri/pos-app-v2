@@ -43,6 +43,9 @@ class ProductFactory extends Factory
             'barcode' => fake()->unique()->numerify('89910#########'),
             'price' => fake()->numberBetween(3, 50) * 1000,
             'stock' => fake()->numberBetween(0, 150),
+            // 0 = tanpa peringatan stok menipis. Dibuat eksplisit supaya test
+            // tidak perlu menebak apakah sebuah produk akan memicu peringatan.
+            'min_stock' => 0,
             'unit' => fake()->randomElement(['pcs', 'botol', 'bungkus', 'kotak', 'sachet']),
             'is_active' => true,
             'image_path' => null,
@@ -57,6 +60,17 @@ class ProductFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'image_path' => 'products/'.fake()->uuid().'.jpg',
+        ]);
+    }
+
+    /**
+     * Produk yang stoknya sudah menyentuh ambang peringatan tokonya.
+     */
+    public function lowStock(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'stock' => 3,
+            'min_stock' => 5,
         ]);
     }
 

@@ -60,6 +60,11 @@ const breadcrumbs = computed<BreadcrumbItem[]>(() => [
 
 const search = ref('');
 const categoryFilter = ref<string>('all');
+const stockFilter = ref<string>('all');
+
+function isLowStock(product: Product): boolean {
+    return product.min_stock > 0 && product.stock <= product.min_stock;
+}
 const currentPage = ref(1);
 const perPage = 10;
 
@@ -79,7 +84,11 @@ const filtered = computed(() => {
                 ? product.category_id === null
                 : String(product.category_id) === categoryFilter.value);
 
-        return matchesKeyword && matchesCategory;
+        const matchesStock =
+            stockFilter.value === 'all' ||
+            (stockFilter.value === 'out' ? product.stock <= 0 : isLowStock(product));
+
+        return matchesKeyword && matchesCategory && matchesStock;
     });
 });
 
@@ -91,7 +100,7 @@ const paginated = computed(() => {
     return filtered.value.slice(start, start + perPage);
 });
 
-watch([search, categoryFilter], () => {
+watch([search, categoryFilter, stockFilter], () => {
     currentPage.value = 1;
 });
 
@@ -106,6 +115,7 @@ const form = useForm({
     category_id: '' as string,
     price: 0,
     stock: 0,
+    min_stock: 0,
     unit: 'pcs',
     is_active: true,
     image: null as File | null,
@@ -165,6 +175,7 @@ function openEdit(product: Product): void {
     form.category_id = product.category_id === null ? '' : String(product.category_id);
     form.price = product.price;
     form.stock = product.stock;
+    form.min_stock = product.min_stock;
     form.unit = product.unit;
     form.is_active = product.is_active;
     form.image = null;
@@ -239,6 +250,16 @@ function confirmDelete(): void {
                     <Search class="text-muted-foreground absolute top-2.5 left-3 size-4" />
                     <Input v-model="search" class="pl-9" placeholder="Cari nama, SKU, atau barcode…" />
                 </div>
+                <Select v-model="stockFilter">
+                    <SelectTrigger class="sm:w-48">
+                        <SelectValue placeholder="Semua stok" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">Semua stok</SelectItem>
+                        <SelectItem value="low">Stok menipis</SelectItem>
+                        <SelectItem value="out">Stok habis</SelectItem>
+                    </SelectContent>
+                </Select>
                 <Select v-model="categoryFilter">
                     <SelectTrigger class="sm:w-56">
                         <SelectValue placeholder="Semua kategori" />
@@ -294,7 +315,13 @@ function confirmDelete(): void {
                                 <TableCell>{{ product.category }}</TableCell>
                                 <TableCell class="text-right">{{ formatRupiah(product.price) }}</TableCell>
                                 <TableCell class="text-right">
-                                    {{ product.stock }} {{ product.unit }}
+                                    <div class="flex items-center justify-end gap-2">
+                                        <Badge v-if="product.stock <= 0" variant="destructive">Habis</Badge>
+                                        <Badge v-else-if="isLowStock(product)" variant="secondary">
+                                            Menipis
+                                        </Badge>
+                                        <span>{{ product.stock }} {{ product.unit }}</span>
+                                    </div>
                                 </TableCell>
                                 <TableCell>
                                     <Badge :variant="product.is_active ? 'default' : 'secondary'">
@@ -410,6 +437,15 @@ function confirmDelete(): void {
                         <Label for="product-stock">Stok</Label>
                         <Input id="product-stock" v-model.number="form.stock" type="number" min="0" />
                         <InputError :message="form.errors.stock" />
+                    </div>
+                    <div class="grid gap-2">
+                        <Label for="product-min-stock">Stok minimal</Label>
+                        <Input id="product-min-stock" v-model.number="form.min_stock" type="number" min="0" />
+                        <p class="text-muted-foreground text-xs">
+                            Kasir diperingatkan bila stok menyentuh angka ini. Isi 0 untuk
+                            mematikan peringatan pada produk ini.
+                        </p>
+                        <InputError :message="form.errors.min_stock" />
                     </div>
                     <div class="grid gap-2 sm:col-span-2">
                         <Label for="product-image">Gambar produk</Label>

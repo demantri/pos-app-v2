@@ -87,6 +87,42 @@ const printing = ref(false);
 
 const sellableProducts = computed(() => props.products.filter((product) => product.is_active));
 
+/**
+ * Produk yang sudah diperingatkan pada keranjang ini. Tanpa penjaga ini, kasir
+ * yang menambah sepuluh batang rokok yang sama akan dihujani sepuluh
+ * notifikasi. Bukan ref karena tidak dipakai di template.
+ */
+const lowStockWarned = new Set<number>();
+
+function isLowStock(product: Product): boolean {
+    return product.min_stock > 0 && product.stock <= product.min_stock;
+}
+
+/**
+ * Peringatan memakai sisa stok SETELAH transaksi ini — yang penting bagi kasir
+ * bukan angka di database, melainkan berapa yang tersisa begitu keranjang ini
+ * dibayar.
+ */
+function addToCart(product: Product): void {
+    cart.addProduct(product);
+
+    if (product.min_stock <= 0 || lowStockWarned.has(product.id)) {
+        return;
+    }
+
+    const inCart = cart.items.value.find((item) => item.product_id === product.id)?.qty ?? 0;
+    const remaining = product.stock - inCart;
+
+    if (remaining > product.min_stock) {
+        return;
+    }
+
+    lowStockWarned.add(product.id);
+    toast.warning(
+        `Stok ${product.name} tinggal ${remaining} ${product.unit} setelah transaksi ini (minimal ${product.min_stock}).`,
+    );
+}
+
 const visibleProducts = computed(() => {
     const keyword = search.value.trim().toLowerCase();
 
@@ -141,14 +177,14 @@ function handleScan(): void {
     );
 
     if (exact) {
-        cart.addProduct(exact);
+        addToCart(exact);
         search.value = '';
 
         return;
     }
 
     if (visibleProducts.value.length === 1) {
-        cart.addProduct(visibleProducts.value[0]);
+        addToCart(visibleProducts.value[0]);
         search.value = '';
     }
 }
@@ -222,6 +258,7 @@ function reprint(): void {
 function startNewOrder(): void {
     receiptDialogOpen.value = false;
     lastReceipt.value = null;
+    lowStockWarned.clear();
     cart.clear();
     paid.value = 0;
     paymentMethod.value = 'tunai';
@@ -310,7 +347,7 @@ useEventListener(window, 'keydown', (event: KeyboardEvent) => {
                             :key="product.id"
                             type="button"
                             class="hover:border-primary focus-visible:ring-ring flex flex-col overflow-hidden rounded-xl border text-left transition focus-visible:ring-2 focus-visible:outline-none"
-                            @click="cart.addProduct(product)"
+                            @click="addToCart(product)"
                         >
                             <div class="bg-muted text-muted-foreground flex aspect-square items-center justify-center overflow-hidden text-xs">
                                 <img
@@ -327,6 +364,12 @@ useEventListener(window, 'keydown', (event: KeyboardEvent) => {
                                 <span class="text-muted-foreground text-xs">
                                     Stok {{ product.stock }} {{ product.unit }}
                                 </span>
+                                <Badge v-if="product.stock <= 0" variant="destructive" class="w-fit">
+                                    Habis
+                                </Badge>
+                                <Badge v-else-if="isLowStock(product)" variant="secondary" class="w-fit">
+                                    Stok menipis
+                                </Badge>
                             </div>
                         </button>
 

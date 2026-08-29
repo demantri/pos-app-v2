@@ -48,6 +48,8 @@ class ProductRequest extends FormRequest
             ],
             'price' => ['required', 'integer', 'min:0'],
             'stock' => ['required', 'integer', 'min:0'],
+            // 0 = produk ini tidak diawasi stoknya.
+            'min_stock' => ['required', 'integer', 'min:0'],
             'unit' => ['required', 'string', 'max:20'],
             'is_active' => ['required', 'boolean'],
             // Satu gambar per produk, disimpan di disk `public`.
@@ -69,6 +71,7 @@ class ProductRequest extends FormRequest
             'category_id' => 'kategori',
             'price' => 'harga',
             'stock' => 'stok',
+            'min_stock' => 'stok minimal',
             'unit' => 'satuan',
             'image' => 'gambar produk',
         ];

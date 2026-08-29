@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { Head, usePage } from '@inertiajs/vue3';
-import { Banknote, PackageCheck, Receipt, TrendingUp } from 'lucide-vue-next';
+import { Head, Link, usePage } from '@inertiajs/vue3';
+import { Banknote, PackageCheck, Receipt, TrendingUp, TriangleAlert } from 'lucide-vue-next';
 import { computed } from 'vue';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
 import {
     Table,
     TableBody,
@@ -112,13 +112,47 @@ const cards = computed(() => [
 
                 <Card>
                     <CardHeader>
-                        <CardTitle>Grafik penjualan</CardTitle>
-                        <CardDescription>Menunggu data transaksi nyata (fase 2).</CardDescription>
+                        <CardTitle class="flex items-center gap-2">
+                            <TriangleAlert
+                                v-if="stats.low_stock_count > 0"
+                                class="size-4 text-amber-600 dark:text-amber-500"
+                            />
+                            Stok menipis
+                        </CardTitle>
+                        <CardDescription>
+                            {{
+                                stats.low_stock_count > 0
+                                    ? `${stats.low_stock_count} produk sudah menyentuh stok minimalnya.`
+                                    : 'Semua produk masih di atas stok minimal.'
+                            }}
+                        </CardDescription>
                     </CardHeader>
                     <CardContent class="space-y-3">
-                        <Skeleton class="h-32 w-full" />
-                        <Skeleton class="h-4 w-2/3" />
-                        <Skeleton class="h-4 w-1/2" />
+                        <p v-if="stats.low_stock.length === 0" class="text-muted-foreground text-sm">
+                            Produk yang stok minimalnya diisi akan muncul di sini begitu perlu
+                            direstok.
+                        </p>
+                        <ul v-else class="space-y-2 text-sm">
+                            <li
+                                v-for="product in stats.low_stock"
+                                :key="product.id"
+                                class="flex items-start justify-between gap-3"
+                            >
+                                <span class="flex-1">{{ product.name }}</span>
+                                <Badge variant="secondary" class="shrink-0">
+                                    {{ product.stock }} / {{ product.min_stock }} {{ product.unit }}
+                                </Badge>
+                            </li>
+                        </ul>
+                        <p
+                            v-if="stats.low_stock_count > stats.low_stock.length"
+                            class="text-muted-foreground text-xs"
+                        >
+                            dan {{ stats.low_stock_count - stats.low_stock.length }} produk lain.
+                        </p>
+                        <Button v-if="stats.low_stock_count > 0" as-child variant="outline" class="w-full">
+                            <Link :href="storePath(currentStore.id, 'products')">Buka Master Produk</Link>
+                        </Button>
                     </CardContent>
                 </Card>
             </div>

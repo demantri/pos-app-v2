@@ -22,6 +22,11 @@ use Illuminate\Database\Seeder;
  */
 class StoreSeeder extends Seeder
 {
+    /**
+     * Ambang peringatan stok menipis untuk seluruh produk demo.
+     */
+    private const MIN_STOCK = 5;
+
     public function run(): void
     {
         foreach (DemoData::stores() as $storeData) {
@@ -80,6 +85,11 @@ class StoreSeeder extends Seeder
                     'barcode' => $productData['barcode'],
                     'price' => $productData['price'],
                     'stock' => $productData['stock'],
+                    // Tidak berasal dari DemoData — ditambahkan di sini supaya
+                    // fitur peringatan stok menipis benar-benar terlihat pada
+                    // data demo. Dengan ambang 5, sebagian kecil produk yang
+                    // stoknya paling rendah langsung tertandai.
+                    'min_stock' => self::MIN_STOCK,
                     'unit' => $productData['unit'],
                     'is_active' => $productData['is_active'],
                     'image_path' => null,

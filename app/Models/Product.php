@@ -26,6 +26,7 @@ class Product extends Model
         'barcode',
         'price',
         'stock',
+        'min_stock',
         'unit',
         'is_active',
         'image_path',
@@ -41,8 +42,20 @@ class Product extends Model
         return [
             'price' => 'integer',
             'stock' => 'integer',
+            'min_stock' => 'integer',
             'is_active' => 'boolean',
         ];
+    }
+
+    /**
+     * Stok sudah menyentuh ambang peringatan toko.
+     *
+     * `min_stock` 0 berarti produk ini memang tidak diawasi — tanpa penjaga
+     * ini, SETIAP produk yang stoknya habis akan ikut dianggap "menipis".
+     */
+    public function isLowStock(): bool
+    {
+        return $this->min_stock > 0 && $this->stock <= $this->min_stock;
     }
 
     /**

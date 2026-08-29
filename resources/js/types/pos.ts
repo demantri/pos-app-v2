@@ -63,6 +63,8 @@ export type Product = {
     category: string;
     price: number;
     stock: number;
+    // Ambang peringatan stok menipis; 0 berarti produk ini tidak diawasi.
+    min_stock: number;
     unit: string;
     is_active: boolean;
     // URL penuh gambar produk, null bila produk belum punya gambar.
@@ -125,11 +127,21 @@ export type ReceiptFlash = {
     number: string;
 };
 
+export type LowStockProduct = {
+    id: number;
+    name: string;
+    stock: number;
+    min_stock: number;
+    unit: string;
+};
+
 export type DashboardStats = {
     sales_today: number;
     transactions_today: number;
     items_sold: number;
     average_per_transaction: number;
+    low_stock_count: number;
+    low_stock: LowStockProduct[];
     recent_transactions: Transaction[];
 };
 
