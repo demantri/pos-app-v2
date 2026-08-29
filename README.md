@@ -192,6 +192,11 @@ gelap:
 Tersedia sebagai varian di `ui/badge` dan `ui/button`, jadi cukup
 `<Badge variant="warning">` atau `<Button variant="danger">`.
 
+Warna primer aplikasi (`--primary`) adalah **biru**, bukan hitam: biru tidak
+bertabrakan makna dengan nada status, karena hijau sudah berarti berhasil,
+kuning peringatan, dan merah bahaya. Mode gelap memakai nada lebih terang dari
+biru yang sama, supaya tombol utama tetap berwarna di kedua tema.
+
 Seluruh pasangan teks/latar sudah diperiksa rasio kontrasnya di kedua tema —
 yang terendah 6,3:1, jauh di atas ambang 4,5:1. Kalau menambah nada baru,
 periksa kontrasnya, jangan dikira-kira.
