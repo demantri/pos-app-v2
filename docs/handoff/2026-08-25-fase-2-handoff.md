@@ -434,6 +434,30 @@ lewat endpoint produk sungguhan, jadi field barunya ikut terbukti tersimpan.
 **Catatan data dev:** Teh Kotak Original di Toko Sudirman sengaja ditinggalkan dengan
 `min_stock` 15 supaya fiturnya langsung terlihat. Seeder memberi seluruh produk demo ambang 5.
 
+## 5f. Alur masuk pengguna satu toko (2026-08-29)
+
+Laporan user: akun kasir yang hanya bekerja di satu toko masih disuruh memilih toko dulu —
+header sidebar berbunyi *"Semua Toko / pilih toko"* dan menunya cuma "Daftar Toko", karena ia
+belum berada di dalam toko mana pun.
+
+Tiga perbaikan:
+
+1. `App\Http\Controllers\EntryPointController` menggantikan `Route::redirect('dashboard')`.
+   Pengguna non-owner yang punya TEPAT satu toko dilempar langsung ke halaman kerjanya: kasir
+   ke `stores.pos`, admin toko ke `stores.show`. Owner dan pengguna multi-toko tetap ke daftar
+   toko.
+2. `StoreSwitcher` menampilkan label biasa (tanpa dropdown, tanpa "pilih toko") bila
+   `storeOptions` hanya berisi satu toko.
+3. Menu "Daftar Toko" disembunyikan untuk pengguna satu toko.
+
+Diverifikasi: `/dashboard` mengarahkan `kasir.sdr` → `/stores/1/pos`, `admin.sdr` →
+`/stores/1`, sedangkan `multirole` (dua toko) dan owner tetap → `/stores`. Tangkapan layar
+memastikan kasir kini melihat header "Toko Sudirman / SDR" tanpa pemilih dan menu berisi POS
+saja, sementara pengguna dua toko tetap punya pemilih dan menu Daftar Toko.
+
+Catatan: `DashboardTest` tetap hijau tanpa diubah — user factory polos tidak punya toko sama
+sekali, jadi ia memang seharusnya mendarat di daftar toko.
+
 ## 6. Catatan T4 (jalur baca) — sudah dikerjakan, disimpan sebagai rujukan
 
 - Ganti pemanggilan `DemoData::*` di controller dengan query Eloquent. `products_count` /

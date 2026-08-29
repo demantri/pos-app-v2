@@ -32,22 +32,39 @@ const currentSubPath = computed(() => {
 function hrefFor(option: StoreOption): string {
     return storePath(option.id, currentSubPath.value);
 }
+
+/**
+ * Pengguna yang hanya punya satu toko tidak butuh pemilih: judulnya langsung
+ * nama tokonya, tanpa dropdown dan tanpa ajakan "pilih toko" yang menyesatkan
+ * karena tidak ada yang bisa dipilih.
+ */
+const singleStore = computed(() => (storeOptions.value.length === 1 ? storeOptions.value[0] : null));
+
+const title = computed(() => currentStore.value?.name ?? singleStore.value?.name ?? 'Semua Toko');
+const subtitle = computed(() => currentStore.value?.code ?? singleStore.value?.code ?? 'pilih toko');
 </script>
 
 <template>
-    <DropdownMenu>
+    <!-- Satu toko: label biasa, bukan tombol — tidak ada yang bisa dipindah. -->
+    <SidebarMenuButton v-if="singleStore" size="lg" class="cursor-default hover:bg-transparent">
+        <div class="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
+            <StoreIcon class="size-4" />
+        </div>
+        <div class="grid flex-1 text-left text-sm leading-tight">
+            <span class="truncate font-semibold">{{ title }}</span>
+            <span class="text-muted-foreground truncate text-xs">{{ subtitle }}</span>
+        </div>
+    </SidebarMenuButton>
+
+    <DropdownMenu v-else>
         <DropdownMenuTrigger as-child>
             <SidebarMenuButton size="lg" class="data-[state=open]:bg-sidebar-accent">
                 <div class="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
                     <StoreIcon class="size-4" />
                 </div>
                 <div class="grid flex-1 text-left text-sm leading-tight">
-                    <span class="truncate font-semibold">
-                        {{ currentStore?.name ?? 'Semua Toko' }}
-                    </span>
-                    <span class="text-muted-foreground truncate text-xs">
-                        {{ currentStore?.code ?? 'pilih toko' }}
-                    </span>
+                    <span class="truncate font-semibold">{{ title }}</span>
+                    <span class="text-muted-foreground truncate text-xs">{{ subtitle }}</span>
                 </div>
                 <ChevronsUpDown class="ml-auto size-4" />
             </SidebarMenuButton>

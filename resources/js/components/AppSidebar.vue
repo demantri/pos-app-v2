@@ -29,14 +29,22 @@ const page = usePage();
 
 const currentStore = computed(() => page.props.currentStore);
 
+/**
+ * Pengguna satu toko tidak melihat menu Daftar Toko: halaman itu cuma berisi
+ * satu kartu miliknya sendiri, jadi hanya jalan memutar ke tempat yang sudah
+ * ia buka.
+ */
+const showStoreList = computed(() => page.props.storeOptions.length !== 1);
+
 const mainNavItems = computed<NavItem[]>(() => {
     const store = currentStore.value;
 
+    const storeList: NavItem = { title: 'Daftar Toko', href: '/stores', icon: StoreIcon };
+
     if (! store) {
-        return [{ title: 'Daftar Toko', href: '/stores', icon: StoreIcon }];
+        return [storeList];
     }
 
-    const storeList: NavItem = { title: 'Daftar Toko', href: '/stores', icon: StoreIcon };
     const pos: NavItem = { title: 'POS', href: storePath(store.id, 'pos'), icon: ScanBarcode };
     const users: NavItem = { title: 'Pengguna Toko', href: storePath(store.id, 'users'), icon: Users };
     const permissions = page.props.permissions;
@@ -48,7 +56,7 @@ const mainNavItems = computed<NavItem[]>(() => {
         return [
             ...(permissions.can_operate_current_pos ? [pos] : []),
             ...(permissions.can_manage_current_store_users ? [users] : []),
-            storeList,
+            ...(showStoreList.value ? [storeList] : []),
         ];
     }
 
@@ -60,7 +68,7 @@ const mainNavItems = computed<NavItem[]>(() => {
         { title: 'Transaksi', href: storePath(store.id, 'transactions'), icon: Receipt },
         users,
         { title: 'Setting Toko', href: storePath(store.id, 'settings'), icon: Settings },
-        storeList,
+        ...(showStoreList.value ? [storeList] : []),
     ];
 });
 </script>

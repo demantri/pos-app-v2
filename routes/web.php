@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\EntryPointController;
 use App\Http\Controllers\Store\CategoryController;
 use App\Http\Controllers\Store\DashboardController;
 use App\Http\Controllers\Store\PosController;
@@ -15,7 +16,7 @@ use Illuminate\Support\Facades\Route;
 Route::inertia('/', 'Welcome')->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::redirect('dashboard', '/stores')->name('dashboard');
+    Route::get('dashboard', EntryPointController::class)->name('dashboard');
 
     Route::get('stores', [StoreController::class, 'index'])->name('stores.index');
 

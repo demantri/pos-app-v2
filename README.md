@@ -31,6 +31,10 @@ Owner **tidak bisa melihat transaksi** toko yang sudah terdaftar. Satu-satunya
 pintunya ke dalam sebuah toko adalah layar Pengguna Toko — itu yang membuat
 toko baru bisa mendapat admin pertamanya.
 
+**Pengguna yang hanya punya satu toko masuk langsung ke tokonya** setelah login —
+kasir ke layar POS, admin toko ke dashboard. Pemilih toko dan menu Daftar Toko
+disembunyikan baginya, karena keduanya cuma jalan memutar ke tempat yang sama.
+
 Seorang pengguna bisa menjadi admin di satu toko sekaligus kasir di toko lain.
 Pendaftaran mandiri tertutup: akun hanya lahir dari owner atau admin toko.
 
