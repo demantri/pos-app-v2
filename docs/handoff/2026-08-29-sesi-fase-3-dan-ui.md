@@ -9,12 +9,20 @@ Baca ini lebih dulu. Untuk sejarah fase 1–2 (skema database, checkout, cetak n
 ## 1. Posisi saat ini
 
 - **Branch:** `main`, bersih, sudah ter-push ke `git@github.com:demantri/pos-app-v2.git`
-- **Commit terakhir sesi ini:** `a506100`
+- **Commit terakhir sesi ini:** `b8eac12`
 - **Gerbang hijau seluruhnya:** `php artisan test` 119 lulus + 2 skipped, Vitest 14 lulus,
   `npm run check` bersih, `vendor/bin/pint --test` lulus.
 
 Dua test yang **skipped** itu normal: `RegistrationTest` memakai `skipUnlessFortifyFeature`
 dan registrasi mandiri memang sudah dimatikan.
+
+> **Sejarah git ditulis ulang 2026-08-29** untuk membuang trailer `Co-Authored-By` dari seluruh
+> pesan commit, lalu di-force-push. Isi berkas tidak berubah sedikit pun (tree HEAD identik,
+> `git diff` antara sebelum dan sesudah kosong), tapi **semua hash berubah** — hash di dokumen ini
+> sudah yang baru. Sejarah lama masih ada di branch `backup/sebelum-hapus-trailer` (lokal).
+> Klon lama yang belum tahu akan menolak `git pull`; pulihkan dengan
+> `git fetch origin && git reset --hard origin/main` setelah memastikan tidak ada commit lokal
+> (`git log origin/main..HEAD`).
 
 ### Yang sudah selesai
 
@@ -25,20 +33,20 @@ Sesi ini menambahkan, berurutan:
 
 | Commit | Isi |
 |---|---|
-| `7c18f7f` | **Fase 3:** owner dicabut dari dalam toko + CRUD toko (arsip/soft delete) |
-| `cd85ec5` | Peringatan stok menipis per produk (`products.min_stock`) |
-| `b4508b2` | Pengguna satu toko masuk langsung ke tokonya |
-| `4566ad7` | Pesan email ganda digenerikkan supaya tidak membocorkan pengguna toko lain |
-| `5a36764` | **Seluruh URL memakai ULID**, bukan id berurut |
-| `eedfbb4` | Halaman masuk berlatar foto kasir + registrasi mandiri ditutup |
-| `ab70a54` | `/` mengalihkan; tidak ada halaman depan lagi |
-| `868917a` | Dashboard owner (`/overview`) + daftar seluruh akun (`/users`) |
-| `0c735a8` | Toko nonaktif mengunci stafnya keluar |
-| `7d81c3e` | Grafik dashboard admin, dashboard kasir, jarak isi tabel |
-| `ef9d3eb` | Perbaikan label tooltip grafik yang `undefined` dan salah data |
-| `c6cb7ce` | Tabel produk dirapikan jadi 6 kolom |
-| `c4f0564` | Enam nada warna lembut untuk badge dan button |
-| `a506100` | Warna primer jadi biru, tidak lagi hitam |
+| `2ef8b96` | **Fase 3:** owner dicabut dari dalam toko + CRUD toko (arsip/soft delete) |
+| `b399374` | Peringatan stok menipis per produk (`products.min_stock`) |
+| `6f58aa2` | Pengguna satu toko masuk langsung ke tokonya |
+| `485832e` | Pesan email ganda digenerikkan supaya tidak membocorkan pengguna toko lain |
+| `8c924c5` | **Seluruh URL memakai ULID**, bukan id berurut |
+| `19e3adf` | Halaman masuk berlatar foto kasir + registrasi mandiri ditutup |
+| `d067d45` | `/` mengalihkan; tidak ada halaman depan lagi |
+| `dae0051` | Dashboard owner (`/overview`) + daftar seluruh akun (`/users`) |
+| `5ee18e5` | Toko nonaktif mengunci stafnya keluar |
+| `aebb046` | Grafik dashboard admin, dashboard kasir, jarak isi tabel |
+| `f44d13a` | Perbaikan label tooltip grafik yang `undefined` dan salah data |
+| `79539d8` | Tabel produk dirapikan jadi 6 kolom |
+| `87a5324` | Enam nada warna lembut untuk badge dan button |
+| `b8eac12` | Warna primer jadi biru, tidak lagi hitam |
 
 ---
 

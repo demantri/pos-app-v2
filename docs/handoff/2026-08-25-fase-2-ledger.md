@@ -2,7 +2,7 @@
 
 Tanpa dokumen spec/rencana terpisah — user meminta "langsung ke implementasi" (2026-08-25).
 Otoritas: keputusan desain yang disetujui user + spec fase 1 §"Tidak termasuk (fase 2)".
-Branch: feature/pos-database (dicabang dari master a2e2234, hasil merge fase 1). In-place.
+Branch: feature/pos-database (dicabang dari master ecc5377, hasil merge fase 1). In-place.
 
 Keputusan desain yang sudah disetujui user:
   - Tabel: stores, categories, products, transactions, transaction_items + relasi user<->toko
@@ -27,8 +27,8 @@ Baseline saat mulai: PHP 94/94 (458 assertion), Vitest 14/14, semua gate hijau.
 
 ## Progres
 
-T1: dispatched (implementer sonnet, BASE a2e2234)
-T1: implementer DONE (commit ff9c2c1). Dampak: 264 error awal (172 di components/ui/**, 92 di kode
+T1: dispatched (implementer sonnet, BASE ecc5377)
+T1: implementer DONE (commit 154f9f5). Dampak: 264 error awal (172 di components/ui/**, 92 di kode
   aplikasi) -> 0, lewat opsi `fallthroughAttributes`+`dataAttributes` + perbaikan manual 13 berkas.
   DUA BUG NYATA ditemukan: (a) `v-model.number` pada Input diam-diam TIDAK mengonversi ke number
   (harga/stok/diskon/bayar), (b) `<Label htmlFor>` seharusnya `for`.
@@ -58,7 +58,7 @@ Ruling: skema ditetapkan controller (tidak ada dokumen rencana):
     layar POS toko itu. Role per-toko (admin di toko A, kasir di toko B) sengaja TIDAK didukung
     karena belum diminta. Biaya bila salah: menambah kolom role di pivot dan memindahkan pembacaan.
 
-T2: dispatched (implementer sonnet, BASE ff9c2c1)
+T2: dispatched (implementer sonnet, BASE 154f9f5)
 T1: review (opus) — tujuan TERCAPAI (probe membuktikan bug kelas Switch, prop/event tak dikenal,
   dan htmlFor semuanya tertangkap; dua opsi vueCompilerOptions terbukti sempit dan tidak membuka
   lubang itu lagi), TAPI 2 Critical + 3 Important.
@@ -99,7 +99,7 @@ Keputusan user: admin toko BOLEH membuat akun kasir untuk tokonya sendiri (bukan
   Konsekuensi untuk T7: owner boleh membuat toko + membuat admin/kasir toko mana pun; admin boleh
   membuat kasir HANYA untuk toko yang ia kelola, dan tidak boleh membuat admin lain maupun toko baru;
   kasir tidak boleh membuat pengguna.
-T2: implementer DONE (commit 5475b04; PHP 105/105, 486 assertion). Kedua koreksi mid-flight masuk
+T2: implementer DONE (commit 0c6a237; PHP 105/105, 486 assertion). Kedua koreksi mid-flight masuk
   sebelum commit pertama.
 T2: review (opus) — 1 Critical, 3 Important, 6 Minor. Batas task dihormati penuh.
 T2: Ruling: `products.category_id` diganti ke `nullable()->nullOnDelete()`. Premis implementer
@@ -117,19 +117,19 @@ T2: Ruling: ketidakcocokan nullable ke TypeScript diselesaikan di T4, bukan seka
   `null -> ''` di lapisan controller karena UI memperlakukannya sebagai string. DB tetap nullable
   karena itu yang jujur.
 T2: fix round 1/5 dispatched (resume implementer sonnet).
-T2: fix round 1/5 DONE (commit 99a9ee1; PHP 110/110, 496 assertion). Seluruh temuan + Minor ditutup.
+T2: fix round 1/5 DONE (commit 3a1230f; PHP 110/110, 496 assertion). Seluruh temuan + Minor ditutup.
 T2: Ruling: re-review terjadwal DILEWATI, saya verifikasi sendiri dengan bukti langsung —
   category_id nullable+nullOnDelete (migration baris 21), unique(store_id,barcode) (baris 37),
   is_owner dicabut dari $fillable (User.php:21-23), factory memakai closure yang menghormati
   category_id eksplisit (ProductFactory.php:38-39). Alasan: user meminta kecepatan, perubahannya
   kecil dan seluruhnya bisa dibuktikan tanpa membaca ulang diff besar.
   Biaya bila salah: satu cacat skema lolos ke T3 — tapi keempat klaim inti sudah saya lihat sendiri.
-T2: complete (commits ff9c2c1..99a9ee1)
+T2: complete (commits 154f9f5..3a1230f)
 
 Perubahan arahan user: mulai T3, TIDAK menulis test baru. Suite lama tetap dijalankan sebagai
   jaring regresi. Urutan digeser: checkout-menyimpan (eks-T6) naik sebelum endpoint tulis lain.
-T3: dispatched (implementer sonnet, BASE 99a9ee1)
-T1: fix round 1/5 DONE (commit c49740e; npm run check exit 0, build exit 0, PHP 110/110, pint pass).
+T3: dispatched (implementer sonnet, BASE 3a1230f)
+T1: fix round 1/5 DONE (commit afb74f6; npm run check exit 0, build exit 0, PHP 110/110, pint pass).
 T1: Ruling: implementer MENOLAK perbaikan Button.vue yang disarankan reviewer (`/* @vue-ignore */`)
   dan memakai pendekatan lain — mendeklarasikan 4 prop native sederhana (type, disabled, tabindex,
   aria-label). Alasannya: `@vue/compiler-sfc` tidak bisa me-resolve `Omit<ButtonHTMLAttributes,...>`
@@ -146,7 +146,7 @@ T1: Ruling: implementer MENOLAK perbaikan Button.vue yang disarankan reviewer (`
 T1: Ruling: re-review terjadwal DILEWATI (user meminta kecepatan); saya verifikasi sendiri dengan
   membaca kedua berkas hasil akhir. Biaya bila salah: satu regresi frontend lolos — tapi kedua
   Critical-nya sudah saya lihat tertutup di kodenya.
-T1: complete (commits a2e2234..c49740e)
+T1: complete (commits ecc5377..afb74f6)
 
 ## Lanjutan 2026-08-29 (sesi berikutnya, tanpa subagent)
 

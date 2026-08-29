@@ -12,7 +12,7 @@ sama bila butuh alasan di balik tiap keputusan.
 ## 1. Posisi saat ini
 
 - **Branch kerja:** `main` (dulu bernama `feature/pos-database`, di-rename di luar sesi; dicabang dari `master`)
-- **`master`:** sudah memuat fase 1 lengkap (merge commit `a2e2234`)
+- **`master`:** sudah memuat fase 1 lengkap (merge commit `ecc5377`)
 - **Fase 1:** SELESAI — template tampilan POS multi-toko, 14 task, seluruhnya ter-review.
   Data dari `App\Support\DemoData` (statis), endpoint tulis hanya memvalidasi lalu
   `redirect()->back()` tanpa menyimpan.
@@ -22,8 +22,8 @@ sama bila butuh alasan di balik tiap keputusan.
 
 | # | Task | Status |
 |---|---|---|
-| T1 | Nyalakan `vueCompilerOptions.strictTemplates` + benahi dampaknya | ✅ selesai (`c49740e`) |
-| T2 | Migration + model + factory | ✅ selesai (`99a9ee1`) |
+| T1 | Nyalakan `vueCompilerOptions.strictTemplates` + benahi dampaknya | ✅ selesai (`afb74f6`) |
+| T2 | Migration + model + factory | ✅ selesai (`3a1230f`) |
 | T3 | Seeder dari isi `DemoData` | ✅ selesai + **terverifikasi 2026-08-29** — lihat §4 |
 | T4 | Jalur baca controller → Eloquent; `ResolveStore` → route model binding | ✅ selesai (2026-08-29) |
 | T5 | **Checkout benar-benar menyimpan + potong stok** | ✅ selesai (2026-08-29) |
