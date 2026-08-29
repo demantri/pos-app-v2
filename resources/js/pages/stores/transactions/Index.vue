@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { Head, usePage } from '@inertiajs/vue3';
+import { Head, router, usePage } from '@inertiajs/vue3';
+import { Printer } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import {
@@ -37,6 +39,28 @@ const breadcrumbs = computed<BreadcrumbItem[]>(() => [
 
 const selected = ref<Transaction | null>(null);
 
+const printingId = ref<number | null>(null);
+
+/**
+ * Cetak ulang nota lama ke printer toko. Baris tabelnya sendiri membuka
+ * detail transaksi, jadi klik tombol ini tidak boleh ikut menembus ke sana.
+ */
+function reprint(transaction: Transaction): void {
+    printingId.value = transaction.id;
+
+    router.post(
+        `${storePath(currentStore.value.id, 'transactions')}/${transaction.id}/print`,
+        {},
+        {
+            preserveScroll: true,
+            preserveState: true,
+            onFinish: () => {
+                printingId.value = null;
+            },
+        },
+    );
+}
+
 const paymentLabel: Record<Transaction['payment_method'], string> = {
     tunai: 'Tunai',
     kartu: 'Kartu',
@@ -67,6 +91,7 @@ const paymentLabel: Record<Transaction['payment_method'], string> = {
                                 <TableHead class="text-right">Item</TableHead>
                                 <TableHead class="text-right">Total</TableHead>
                                 <TableHead>Metode</TableHead>
+                                <TableHead class="w-16 text-right">Nota</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -90,6 +115,17 @@ const paymentLabel: Record<Transaction['payment_method'], string> = {
                                     <Badge variant="secondary">
                                         {{ paymentLabel[transaction.payment_method] }}
                                     </Badge>
+                                </TableCell>
+                                <TableCell class="text-right" @click.stop>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        :aria-label="`Cetak ulang nota ${transaction.number}`"
+                                        :disabled="printingId === transaction.id"
+                                        @click="reprint(transaction)"
+                                    >
+                                        <Printer class="size-4" />
+                                    </Button>
                                 </TableCell>
                             </TableRow>
                         </TableBody>

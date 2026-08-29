@@ -74,7 +74,10 @@ const filtered = computed(() => {
             product.barcode.includes(keyword);
 
         const matchesCategory =
-            categoryFilter.value === 'all' || String(product.category_id) === categoryFilter.value;
+            categoryFilter.value === 'all' ||
+            (categoryFilter.value === 'none'
+                ? product.category_id === null
+                : String(product.category_id) === categoryFilter.value);
 
         return matchesKeyword && matchesCategory;
     });
@@ -105,12 +108,51 @@ const form = useForm({
     stock: 0,
     unit: 'pcs',
     is_active: true,
+    image: null as File | null,
+    remove_image: false,
 });
+
+// Gambar yang sudah tersimpan di produk yang sedang diubah. Dipisah dari
+// `form` karena ia bukan nilai yang dikirim, hanya bahan pratinjau.
+const existingImageUrl = ref<string | null>(null);
+const imageInput = ref<HTMLInputElement | null>(null);
+
+const imagePreview = computed(() => {
+    if (form.image) {
+        return URL.createObjectURL(form.image);
+    }
+
+    return form.remove_image ? null : existingImageUrl.value;
+});
+
+function onImagePicked(event: Event): void {
+    const target = event.target as HTMLInputElement;
+
+    form.image = target.files?.[0] ?? null;
+    form.remove_image = false;
+}
+
+function clearImage(): void {
+    form.image = null;
+    // Menandai penghapusan hanya bermakna bila produknya memang punya gambar
+    // tersimpan; untuk produk baru cukup mengosongkan pilihan berkas.
+    form.remove_image = existingImageUrl.value !== null;
+
+    if (imageInput.value) {
+        imageInput.value.value = '';
+    }
+}
 
 function openCreate(): void {
     editingId.value = null;
     form.reset();
     form.clearErrors();
+    existingImageUrl.value = null;
+
+    if (imageInput.value) {
+        imageInput.value.value = '';
+    }
+
     dialogOpen.value = true;
 }
 
@@ -120,11 +162,19 @@ function openEdit(product: Product): void {
     form.name = product.name;
     form.sku = product.sku;
     form.barcode = product.barcode;
-    form.category_id = String(product.category_id);
+    form.category_id = product.category_id === null ? '' : String(product.category_id);
     form.price = product.price;
     form.stock = product.stock;
     form.unit = product.unit;
     form.is_active = product.is_active;
+    form.image = null;
+    form.remove_image = false;
+    existingImageUrl.value = product.image_url;
+
+    if (imageInput.value) {
+        imageInput.value.value = '';
+    }
+
     dialogOpen.value = true;
 }
 
@@ -139,10 +189,15 @@ function submit(): void {
     };
 
     if (editingId.value === null) {
-        form.post(base, options);
-    } else {
-        form.put(`${base}/${editingId.value}`, options);
+        form.transform((data) => data).post(base, options);
+
+        return;
     }
+
+    // Unggahan berkas dikirim sebagai multipart/form-data, dan PHP tidak
+    // mem-parse body multipart pada request PUT — jadi update memakai POST
+    // dengan _method spoofing yang diterjemahkan Laravel kembali menjadi PUT.
+    form.transform((data) => ({ ...data, _method: 'put' })).post(`${base}/${editingId.value}`, options);
 }
 
 function confirmDelete(): void {
@@ -150,7 +205,9 @@ function confirmDelete(): void {
         return;
     }
 
-    form.delete(`${storePath(currentStore.value.id, 'products')}/${deletingId.value}`, {
+    // transform() menempel pada instance form sampai diganti — dikembalikan
+    // ke apa adanya supaya _method dari jalur update tidak ikut terbawa.
+    form.transform((data) => data).delete(`${storePath(currentStore.value.id, 'products')}/${deletingId.value}`, {
         preserveScroll: true,
         onFinish: () => {
             deletingId.value = null;
@@ -188,6 +245,7 @@ function confirmDelete(): void {
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem value="all">Semua kategori</SelectItem>
+                        <SelectItem value="none">Tanpa kategori</SelectItem>
                         <SelectItem
                             v-for="category in categories"
                             :key="category.id"
@@ -204,6 +262,7 @@ function confirmDelete(): void {
                     <Table>
                         <TableHeader>
                             <TableRow>
+                                <TableHead class="w-14"><span class="sr-only">Gambar</span></TableHead>
                                 <TableHead>Nama</TableHead>
                                 <TableHead>SKU</TableHead>
                                 <TableHead>Kategori</TableHead>
@@ -215,11 +274,21 @@ function confirmDelete(): void {
                         </TableHeader>
                         <TableBody>
                             <TableRow v-if="paginated.length === 0">
-                                <TableCell colspan="7" class="text-muted-foreground py-8 text-center">
+                                <TableCell colspan="8" class="text-muted-foreground py-8 text-center">
                                     Tidak ada produk yang cocok.
                                 </TableCell>
                             </TableRow>
                             <TableRow v-for="product in paginated" :key="product.id">
+                                <TableCell>
+                                    <div class="bg-muted size-10 overflow-hidden rounded-md border">
+                                        <img
+                                            v-if="product.image_url"
+                                            :src="product.image_url"
+                                            :alt="product.name"
+                                            class="size-full object-cover"
+                                        />
+                                    </div>
+                                </TableCell>
                                 <TableCell class="font-medium">{{ product.name }}</TableCell>
                                 <TableCell class="text-muted-foreground">{{ product.sku }}</TableCell>
                                 <TableCell>{{ product.category }}</TableCell>
@@ -289,7 +358,7 @@ function confirmDelete(): void {
                 <DialogHeader>
                     <DialogTitle>{{ editingId === null ? 'Tambah Produk' : 'Ubah Produk' }}</DialogTitle>
                     <DialogDescription>
-                        Perubahan belum disimpan ke database pada tahap template ini.
+                        SKU dan barcode harus unik di dalam toko ini.
                     </DialogDescription>
                 </DialogHeader>
 
@@ -342,6 +411,48 @@ function confirmDelete(): void {
                         <Input id="product-stock" v-model.number="form.stock" type="number" min="0" />
                         <InputError :message="form.errors.stock" />
                     </div>
+                    <div class="grid gap-2 sm:col-span-2">
+                        <Label for="product-image">Gambar produk</Label>
+                        <div class="flex items-start gap-3">
+                            <div class="bg-muted size-20 shrink-0 overflow-hidden rounded-lg border">
+                                <img
+                                    v-if="imagePreview"
+                                    :src="imagePreview"
+                                    :alt="form.name"
+                                    class="size-full object-cover"
+                                />
+                                <span
+                                    v-else
+                                    class="text-muted-foreground flex size-full items-center justify-center text-xs"
+                                >
+                                    Tanpa gambar
+                                </span>
+                            </div>
+                            <div class="grid flex-1 gap-2">
+                                <input
+                                    id="product-image"
+                                    ref="imageInput"
+                                    type="file"
+                                    accept="image/jpeg,image/png,image/webp"
+                                    class="text-muted-foreground file:bg-muted file:text-foreground text-sm file:mr-3 file:rounded-md file:border-0 file:px-3 file:py-1.5 file:text-sm"
+                                    @change="onImagePicked"
+                                />
+                                <p class="text-muted-foreground text-xs">JPG, PNG, atau WebP. Maksimal 2 MB.</p>
+                                <Button
+                                    v-if="imagePreview"
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    class="w-fit"
+                                    @click="clearImage"
+                                >
+                                    Hapus gambar
+                                </Button>
+                            </div>
+                        </div>
+                        <InputError :message="form.errors.image" />
+                    </div>
+
                     <div class="flex items-center gap-3 sm:col-span-2">
                         <Switch id="product-active" v-model="form.is_active" />
                         <Label for="product-active">Produk aktif dijual</Label>

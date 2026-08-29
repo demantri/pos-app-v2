@@ -2,7 +2,8 @@
 
 namespace App\Http\Middleware;
 
-use App\Support\DemoData;
+use App\Models\Store;
+use App\Support\StoreData;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -43,11 +44,40 @@ class HandleInertiaRequests extends Middleware
                 'user' => $request->user(),
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
-            'currentStore' => fn () => $request->attributes->get('store'),
-            'storeOptions' => fn () => DemoData::storeOptions(),
+            'currentStore' => function () use ($request): ?array {
+                $store = $request->attributes->get('store');
+                $user = $request->user();
+
+                return $store instanceof Store ? StoreData::store($store, $user) : null;
+            },
+            'storeOptions' => function () use ($request): array {
+                $user = $request->user();
+
+                return $user === null ? [] : StoreData::storeOptions($user);
+            },
+            // Wewenang yang dipakai UI untuk menyembunyikan aksi yang memang
+            // akan ditolak server. Ini hanya kosmetik — penegakannya ada di
+            // App\Policies\StorePolicy dan routes/web.php.
+            'permissions' => function () use ($request): array {
+                $user = $request->user();
+                $store = $request->attributes->get('store');
+
+                return [
+                    'is_owner' => $user?->isOwner() ?? false,
+                    'can_create_store' => $user?->isOwner() ?? false,
+                    'can_manage_current_store' => $user !== null && $store instanceof Store
+                        ? $user->canManageStore($store)
+                        : false,
+                    'can_create_admin' => $user?->isOwner() ?? false,
+                ];
+            },
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
                 'error' => fn () => $request->session()->get('error'),
+                // Diisi hanya oleh checkout: nomor + id transaksi yang baru
+                // saja tersimpan, supaya layar POS bisa menampilkan nomor
+                // struk sungguhan dan menawarkan cetak ulang.
+                'receipt' => fn () => $request->session()->get('receipt'),
             ],
         ];
     }

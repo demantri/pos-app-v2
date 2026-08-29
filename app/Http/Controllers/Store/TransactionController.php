@@ -3,19 +3,17 @@
 namespace App\Http\Controllers\Store;
 
 use App\Http\Controllers\Controller;
-use App\Support\DemoData;
-use Illuminate\Http\Request;
+use App\Models\Store;
+use App\Support\StoreData;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class TransactionController extends Controller
 {
-    public function index(Request $request): Response
+    public function index(Store $store): Response
     {
-        $store = $request->attributes->get('store');
-
         return Inertia::render('stores/transactions/Index', [
-            'transactions' => DemoData::transactions($store['id']),
+            'transactions' => StoreData::transactions($store),
         ]);
     }
 }

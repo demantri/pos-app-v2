@@ -172,7 +172,7 @@ function confirmDelete(): void {
                 <DialogHeader>
                     <DialogTitle>{{ editingId === null ? 'Kategori Baru' : 'Ubah Kategori' }}</DialogTitle>
                     <DialogDescription>
-                        Perubahan belum disimpan ke database pada tahap template ini.
+                        Nama kategori harus unik di dalam toko ini.
                     </DialogDescription>
                 </DialogHeader>
 

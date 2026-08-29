@@ -12,7 +12,7 @@ class StoreValidationTest extends TestCase
 
     public function test_new_store_requires_name_code_address_and_phone(): void
     {
-        $this->actingAs(User::factory()->create());
+        $this->actingAs(User::factory()->owner()->create());
 
         $this->from(route('stores.index'))
             ->post(route('stores.store'), [])
@@ -21,7 +21,7 @@ class StoreValidationTest extends TestCase
 
     public function test_store_fields_reject_values_longer_than_their_max_length(): void
     {
-        $this->actingAs(User::factory()->create());
+        $this->actingAs(User::factory()->owner()->create());
 
         $this->from(route('stores.index'))
             ->post(route('stores.store'), [
@@ -33,9 +33,9 @@ class StoreValidationTest extends TestCase
             ->assertSessionHasErrors(['name', 'code', 'address', 'phone']);
     }
 
-    public function test_valid_store_returns_a_demo_flash_message(): void
+    public function test_valid_store_is_saved_to_the_database(): void
     {
-        $this->actingAs(User::factory()->create());
+        $this->actingAs(User::factory()->owner()->create());
 
         $this->from(route('stores.index'))
             ->post(route('stores.store'), [
@@ -46,5 +46,13 @@ class StoreValidationTest extends TestCase
             ])
             ->assertRedirect(route('stores.index'))
             ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('stores', [
+            'name' => 'Toko Baru',
+            'code' => 'TBR',
+            'address' => 'Jl. Percobaan No. 1',
+            'phone' => '021-5550000',
+            'receipt_header' => 'Toko Baru',
+        ]);
     }
 }

@@ -4,35 +4,43 @@ namespace App\Http\Controllers\Store;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Store\CategoryRequest;
-use App\Support\DemoData;
+use App\Models\Category;
+use App\Models\Store;
+use App\Support\StoreData;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class CategoryController extends Controller
 {
-    public function index(Request $request): Response
+    public function index(Store $store): Response
     {
-        $store = $request->attributes->get('store');
-
         return Inertia::render('stores/categories/Index', [
-            'categories' => DemoData::categories($store['id']),
+            'categories' => StoreData::categories($store),
         ]);
     }
 
-    public function store(CategoryRequest $request): RedirectResponse
+    public function store(CategoryRequest $request, Store $store): RedirectResponse
     {
-        return back()->with('success', 'Kategori tersimpan (demo — belum masuk database).');
+        $store->categories()->create($request->validated());
+
+        return back()->with('success', 'Kategori tersimpan.');
     }
 
-    public function update(CategoryRequest $request, int $category): RedirectResponse
+    public function update(CategoryRequest $request, Store $store, Category $category): RedirectResponse
     {
-        return back()->with('success', 'Kategori diperbarui (demo — belum masuk database).');
+        $category->update($request->validated());
+
+        return back()->with('success', 'Kategori diperbarui.');
     }
 
-    public function destroy(Request $request, int $category): RedirectResponse
+    public function destroy(Store $store, Category $category): RedirectResponse
     {
-        return back()->with('success', 'Kategori dihapus (demo — belum masuk database).');
+        // products.category_id memakai nullOnDelete: produknya tidak ikut
+        // terhapus, hanya kehilangan pengelompokannya — persis seperti yang
+        // dijanjikan teks konfirmasi di halaman kategori.
+        $category->delete();
+
+        return back()->with('success', 'Kategori dihapus. Produknya kehilangan pengelompokan.');
     }
 }

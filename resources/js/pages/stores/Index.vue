@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { Head, Link, useForm } from '@inertiajs/vue3';
+import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
 import { MapPin, Phone, Plus } from 'lucide-vue-next';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import InputError from '@/components/InputError.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -28,6 +28,26 @@ import { storePath } from '@/lib/store-path';
 import type { BreadcrumbItem, Store } from '@/types';
 
 defineProps<{ stores: Store[] }>();
+
+const page = usePage();
+
+// Hanya owner yang boleh membuat toko baru (users.is_owner). Tombolnya
+// disembunyikan; penegakannya tetap di server (can:create,Store).
+const canCreateStore = computed(() => page.props.permissions.can_create_store);
+
+const roleLabels: Record<string, string> = {
+    owner: 'Owner',
+    admin: 'Admin toko',
+    kasir: 'Kasir',
+};
+
+/**
+ * Kasir tidak punya akses ke dashboard toko, jadi tombol utamanya langsung
+ * mengarah ke layar POS.
+ */
+function entryPath(store: Store): string {
+    return store.role === 'kasir' ? storePath(store.id, 'pos') : storePath(store.id);
+}
 
 const breadcrumbs: BreadcrumbItem[] = [{ title: 'Daftar Toko', href: '/stores' }];
 
@@ -63,7 +83,7 @@ function submit(): void {
                         {{ stores.length }} toko terdaftar. Pilih toko untuk masuk ke kasir dan datanya.
                     </p>
                 </div>
-                <Button @click="dialogOpen = true">
+                <Button v-if="canCreateStore" @click="dialogOpen = true">
                     <Plus class="size-4" />
                     Toko Baru
                 </Button>
@@ -77,9 +97,14 @@ function submit(): void {
                                 <CardTitle>{{ store.name }}</CardTitle>
                                 <CardDescription>Kode {{ store.code }}</CardDescription>
                             </div>
-                            <Badge :variant="store.is_active ? 'default' : 'secondary'">
-                                {{ store.is_active ? 'Buka' : 'Tutup' }}
-                            </Badge>
+                            <div class="flex flex-col items-end gap-1">
+                                <Badge :variant="store.is_active ? 'default' : 'secondary'">
+                                    {{ store.is_active ? 'Buka' : 'Tutup' }}
+                                </Badge>
+                                <span v-if="store.role" class="text-muted-foreground text-xs">
+                                    {{ roleLabels[store.role] }}
+                                </span>
+                            </div>
                         </div>
                     </CardHeader>
                     <CardContent class="text-muted-foreground flex-1 space-y-2 text-sm">
@@ -95,7 +120,7 @@ function submit(): void {
                     </CardContent>
                     <CardFooter class="gap-2">
                         <Button as-child class="flex-1">
-                            <Link :href="storePath(store.id)">Buka</Link>
+                            <Link :href="entryPath(store)">Buka</Link>
                         </Button>
                         <Button as-child variant="outline">
                             <Link :href="storePath(store.id, 'pos')">POS</Link>
@@ -110,7 +135,7 @@ function submit(): void {
                 <DialogHeader>
                     <DialogTitle>Toko Baru</DialogTitle>
                     <DialogDescription>
-                        Data toko belum disimpan ke database pada tahap template ini.
+                        Kode toko dipakai sebagai awalan nomor struk dan harus unik.
                     </DialogDescription>
                 </DialogHeader>
 

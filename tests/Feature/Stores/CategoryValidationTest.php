@@ -2,6 +2,9 @@
 
 namespace Tests\Feature\Stores;
 
+use App\Models\Category;
+use App\Models\Product;
+use App\Models\Store;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -12,45 +15,78 @@ class CategoryValidationTest extends TestCase
 
     public function test_category_requires_a_name(): void
     {
-        $this->actingAs(User::factory()->create());
+        $this->actingAs(User::factory()->owner()->create());
+        $store = Store::factory()->create();
 
-        $this->from(route('stores.categories.index', ['store' => 1]))
-            ->post(route('stores.categories.store', ['store' => 1]), ['description' => 'tanpa nama'])
+        $this->from(route('stores.categories.index', ['store' => $store->id]))
+            ->post(route('stores.categories.store', ['store' => $store->id]), ['description' => 'tanpa nama'])
             ->assertSessionHasErrors('name');
     }
 
     public function test_category_fields_reject_values_longer_than_their_max_length(): void
     {
-        $this->actingAs(User::factory()->create());
+        $this->actingAs(User::factory()->owner()->create());
+        $store = Store::factory()->create();
 
-        $this->from(route('stores.categories.index', ['store' => 1]))
-            ->post(route('stores.categories.store', ['store' => 1]), [
+        $this->from(route('stores.categories.index', ['store' => $store->id]))
+            ->post(route('stores.categories.store', ['store' => $store->id]), [
                 'name' => str_repeat('a', 61),
                 'description' => str_repeat('a', 256),
             ])
             ->assertSessionHasErrors(['name', 'description']);
     }
 
-    public function test_category_can_be_submitted_and_updated_in_demo_mode(): void
+    public function test_category_is_created_updated_and_deleted_in_the_database(): void
     {
-        $this->actingAs(User::factory()->create());
+        $this->actingAs(User::factory()->owner()->create());
+        $store = Store::factory()->create();
+        $index = route('stores.categories.index', ['store' => $store->id]);
 
-        $this->from(route('stores.categories.index', ['store' => 1]))
-            ->post(route('stores.categories.store', ['store' => 1]), [
+        $this->from($index)
+            ->post(route('stores.categories.store', ['store' => $store->id]), [
                 'name' => 'Kategori Baru',
                 'description' => 'Contoh',
             ])
             ->assertSessionHas('success');
 
-        $this->from(route('stores.categories.index', ['store' => 1]))
-            ->put(route('stores.categories.update', ['store' => 1, 'category' => 101]), [
+        $this->assertDatabaseHas('categories', [
+            'store_id' => $store->id,
+            'name' => 'Kategori Baru',
+            'description' => 'Contoh',
+        ]);
+
+        $category = Category::query()->where('store_id', $store->id)->where('name', 'Kategori Baru')->firstOrFail();
+
+        $this->from($index)
+            ->put(route('stores.categories.update', ['store' => $store->id, 'category' => $category->id]), [
                 'name' => 'Kategori Diubah',
                 'description' => null,
             ])
             ->assertSessionHas('success');
 
-        $this->from(route('stores.categories.index', ['store' => 1]))
-            ->delete(route('stores.categories.destroy', ['store' => 1, 'category' => 101]))
+        $this->assertDatabaseHas('categories', ['id' => $category->id, 'name' => 'Kategori Diubah']);
+
+        $this->from($index)
+            ->delete(route('stores.categories.destroy', ['store' => $store->id, 'category' => $category->id]))
             ->assertSessionHas('success');
+
+        $this->assertDatabaseMissing('categories', ['id' => $category->id]);
+    }
+
+    public function test_deleting_a_category_keeps_its_products_but_clears_their_grouping(): void
+    {
+        $this->actingAs(User::factory()->owner()->create());
+        $store = Store::factory()->create();
+        $category = Category::factory()->create(['store_id' => $store->id]);
+        $product = Product::factory()->create([
+            'store_id' => $store->id,
+            'category_id' => $category->id,
+        ]);
+
+        $this->from(route('stores.categories.index', ['store' => $store->id]))
+            ->delete(route('stores.categories.destroy', ['store' => $store->id, 'category' => $category->id]))
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('products', ['id' => $product->id, 'category_id' => null]);
     }
 }

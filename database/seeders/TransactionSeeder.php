@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\Product;
 use App\Models\Store;
 use App\Models\Transaction;
+use App\Support\CartMath;
 use App\Support\DemoData;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
@@ -18,6 +19,9 @@ use Illuminate\Support\Carbon;
  * SAMA PERSIS dengan resources/js/lib/cart.ts (cartTotals()/roundTo()),
  * supaya angka di dashboard/struk hasil seed konsisten dengan transaksi
  * yang nanti dibuat lewat checkout sungguhan:
+ *
+ * Rumusnya tidak disalin, melainkan dipanggil dari App\Support\CartMath —
+ * kelas yang sama yang dipakai checkout sungguhan:
  *
  *   1. subtotal   = jumlah subtotal tiap baris, dan subtotal baris
  *                   di-clamp max(0, price*qty - discount) — BUKAN rumus
@@ -72,20 +76,28 @@ class TransactionSeeder extends Seeder
                 'discount' => $item['discount'],
                 // max(0, price*qty - discount) — versi cart.ts::lineSubtotal(),
                 // bukan versi DemoData yang tidak di-clamp.
-                'subtotal' => max(0, ($item['price'] * $item['qty']) - $item['discount']),
+                'subtotal' => CartMath::lineSubtotal($item['price'], $item['qty'], $item['discount']),
             ];
         }, $txData['items']);
 
-        $subtotal = array_sum(array_column($items, 'subtotal'));
-        // cart.ts::cartTotals() mengklem diskon transaksi ke [0, subtotal].
-        // DemoData tidak punya diskon transaksi, jadi rawDiscount = 0 dan
-        // hasil klemnya selalu 0 juga — ditulis eksplisit di sini supaya
-        // tetap terbaca sebagai "rumus yang sama", bukan angka ajaib.
+        // DemoData tidak punya diskon tingkat transaksi, jadi rawDiscount = 0.
         $rawDiscount = 0;
-        $discount = min(max(0, $rawDiscount), $subtotal);
-        $taxable = $subtotal - $discount;
-        $tax = (int) round($taxable * $store->tax_percent / 100);
-        $total = $taxable === 0 ? 0 : $this->roundTo($taxable + $tax, $store->rounding);
+
+        // Rumus uangnya TIDAK ditulis ulang di sini: dipinjam dari
+        // App\Support\CartMath, kelas yang sama yang dipakai checkout
+        // sungguhan (App\Actions\Pos\ProcessCheckout). Itu yang menjamin
+        // angka transaksi hasil seed dan hasil kasir tidak pernah berbeda.
+        $totals = CartMath::totals(
+            (int) array_sum(array_column($items, 'subtotal')),
+            $rawDiscount,
+            $store->tax_percent,
+            $store->rounding,
+        );
+
+        $subtotal = $totals['subtotal'];
+        $discount = $totals['discount'];
+        $tax = $totals['tax'];
+        $total = $totals['total'];
         $paid = $total === 0 ? 0 : (int) (ceil($total / 5000) * 5000);
         $change = $paid - $total;
 
@@ -123,15 +135,6 @@ class TransactionSeeder extends Seeder
             ],
             $items,
         ));
-    }
-
-    private function roundTo(int $value, int $step): int
-    {
-        if ($step <= 1) {
-            return (int) round($value);
-        }
-
-        return (int) (round($value / $step) * $step);
     }
 
     private function demoStoreIdFor(string $code): ?int

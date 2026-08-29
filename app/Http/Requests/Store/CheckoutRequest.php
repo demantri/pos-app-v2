@@ -2,38 +2,39 @@
 
 namespace App\Http\Requests\Store;
 
+use App\Models\Store;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class CheckoutRequest extends FormRequest
 {
     /**
-     * PERINGATAN UNTUK FASE 2 (persistensi transaksi):
+     * `items.*.price` tetap divalidasi karena klien memang mengirimnya
+     * (angka yang tampil di layar kasir saat tombol bayar ditekan), TAPI
+     * nilainya TIDAK dipakai untuk apa pun yang disimpan: harga yang ditulis
+     * ke transaksi diambil ulang dari record produk di database oleh
+     * App\Actions\Pos\ProcessCheckout. Jangan pernah menyimpannya langsung
+     * dari payload — itu lubang price-tampering.
      *
-     * `items.*.price` dan `items.*.discount` di bawah ini datang dari klien dan
-     * hanya divalidasi tipe serta tandanya (bukan integritasnya) — nilainya
-     * murni echo untuk kebutuhan tampilan struk yang sudah dipegang klien saat
-     * checkout ditekan. Endpoint saat ini tidak menyimpan apa pun (lihat
-     * PosController::checkout()), jadi lubang ini masih inert.
-     *
-     * Begitu fase 2 benar-benar menyimpan transaksi, JANGAN percaya
-     * `items.*.price`/`items.*.discount` dari payload ini sebagai nilai yang
-     * disimpan — itu lubang price-tampering. Hitung ulang harga & diskon dari
-     * record produk di database pada saat proses checkout server-side.
-     *
-     * `items.*.product_id` juga belum di-scope ke toko yang sedang di-resolve
-     * (lihat `ResolveStore`/`$request->attributes->get('store')`) — tanpa
-     * aturan `exists:products,id,store_id,<store_id>` (atau setara), fase 2
-     * berisiko membuka lubang penulisan lintas-toko (checkout toko A memakai
-     * product_id milik toko B).
+     * `items.*.product_id` di-scope ke toko yang sedang dibuka lewat aturan
+     * `exists` di bawah, supaya checkout di toko A tidak bisa memakai produk
+     * milik toko B. ProcessCheckout memeriksanya sekali lagi saat mengambil
+     * produknya (query-nya juga di-scope ke toko), jadi lubang ini tertutup
+     * di dua lapis.
      *
      * @return array<string, mixed>
      */
     public function rules(): array
     {
+        $storeId = $this->store()->getKey();
+
         return [
             'items' => ['required', 'array', 'min:1'],
-            'items.*.product_id' => ['required', 'integer'],
+            'items.*.product_id' => [
+                'required',
+                'integer',
+                Rule::exists('products', 'id')->where('store_id', $storeId),
+            ],
             'items.*.qty' => ['required', 'integer', 'min:1'],
             'items.*.price' => ['required', 'integer', 'min:0'],
             'items.*.discount' => ['required', 'integer', 'min:0'],
@@ -44,6 +45,18 @@ class CheckoutRequest extends FormRequest
     }
 
     /**
+     * Toko yang sedang dibuka, hasil route model binding {store}.
+     */
+    public function store(): Store
+    {
+        $store = $this->route('store');
+
+        abort_if(! $store instanceof Store, 404);
+
+        return $store;
+    }
+
+    /**
      * @return array<string, string>
      */
     public function messages(): array
@@ -51,6 +64,7 @@ class CheckoutRequest extends FormRequest
         return [
             'items.required' => 'Keranjang masih kosong.',
             'items.min' => 'Keranjang masih kosong.',
+            'items.*.product_id.exists' => 'Ada produk di keranjang yang bukan milik toko ini.',
         ];
     }
 

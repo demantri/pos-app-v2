@@ -8,6 +8,7 @@ import {
     Settings,
     Store as StoreIcon,
     Tags,
+    Users,
 } from 'lucide-vue-next';
 import { computed } from 'vue';
 import NavMain from '@/components/NavMain.vue';
@@ -35,14 +36,25 @@ const mainNavItems = computed<NavItem[]>(() => {
         return [{ title: 'Daftar Toko', href: '/stores', icon: StoreIcon }];
     }
 
+    const storeList: NavItem = { title: 'Daftar Toko', href: '/stores', icon: StoreIcon };
+    const pos: NavItem = { title: 'POS', href: storePath(store.id, 'pos'), icon: ScanBarcode };
+
+    // Kasir hanya punya layar POS di toko ini — menu lain memang akan
+    // ditolak server (lihat routes/web.php: can:manage,store), jadi tidak
+    // ditampilkan sama sekali.
+    if (! page.props.permissions.can_manage_current_store) {
+        return [pos, storeList];
+    }
+
     return [
         { title: 'Dashboard', href: storePath(store.id), icon: LayoutGrid },
-        { title: 'POS', href: storePath(store.id, 'pos'), icon: ScanBarcode },
+        pos,
         { title: 'Produk', href: storePath(store.id, 'products'), icon: Package },
         { title: 'Kategori', href: storePath(store.id, 'categories'), icon: Tags },
         { title: 'Transaksi', href: storePath(store.id, 'transactions'), icon: Receipt },
+        { title: 'Pengguna Toko', href: storePath(store.id, 'users'), icon: Users },
         { title: 'Setting Toko', href: storePath(store.id, 'settings'), icon: Settings },
-        { title: 'Daftar Toko', href: '/stores', icon: StoreIcon },
+        storeList,
     ];
 });
 </script>

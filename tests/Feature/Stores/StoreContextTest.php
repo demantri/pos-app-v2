@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Stores;
 
+use App\Models\Store;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia;
@@ -13,7 +14,8 @@ class StoreContextTest extends TestCase
 
     public function test_store_options_are_shared_and_current_store_is_null_outside_a_store(): void
     {
-        $this->actingAs(User::factory()->create());
+        $this->actingAs(User::factory()->owner()->create());
+        Store::factory()->count(3)->create();
 
         $this->get(route('stores.index'))
             ->assertOk()
@@ -27,19 +29,20 @@ class StoreContextTest extends TestCase
 
     public function test_current_store_is_shared_inside_a_store_scope(): void
     {
-        $this->actingAs(User::factory()->create());
+        $this->actingAs(User::factory()->owner()->create());
+        $store = Store::factory()->create(['name' => 'Toko Kelapa Dua']);
 
-        $this->get(route('stores.show', ['store' => 2]))
+        $this->get(route('stores.show', ['store' => $store->id]))
             ->assertOk()
             ->assertInertia(fn (AssertableInertia $page) => $page
-                ->where('currentStore.id', 2)
+                ->where('currentStore.id', $store->id)
                 ->where('currentStore.name', 'Toko Kelapa Dua'),
             );
     }
 
     public function test_unknown_store_returns_not_found(): void
     {
-        $this->actingAs(User::factory()->create());
+        $this->actingAs(User::factory()->owner()->create());
 
         $this->get('/stores/999')->assertNotFound();
     }

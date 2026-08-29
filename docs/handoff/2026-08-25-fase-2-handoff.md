@@ -21,12 +21,12 @@ sama bila butuh alasan di balik tiap keputusan.
 |---|---|---|
 | T1 | Nyalakan `vueCompilerOptions.strictTemplates` + benahi dampaknya | ✅ selesai (`c49740e`) |
 | T2 | Migration + model + factory | ✅ selesai (`99a9ee1`) |
-| T3 | Seeder dari isi `DemoData` | ⚠️ **WIP, belum diverifikasi** — lihat §4 |
-| T4 | Jalur baca controller → Eloquent; `ResolveStore` → route model binding | belum |
-| T5 | **Checkout benar-benar menyimpan + potong stok** (dinaikkan prioritasnya) | belum |
-| T6 | Endpoint tulis lain (toko/kategori/produk/setting) + upload gambar produk | belum |
-| T7 | Role owner/admin/kasir + otorisasi + layar kelola pengguna toko | belum |
-| T8 | Rapikan test, buang label demo, README | belum |
+| T3 | Seeder dari isi `DemoData` | ✅ selesai + **terverifikasi 2026-08-29** — lihat §4 |
+| T4 | Jalur baca controller → Eloquent; `ResolveStore` → route model binding | ✅ selesai (2026-08-29) |
+| T5 | **Checkout benar-benar menyimpan + potong stok** | ✅ selesai (2026-08-29) |
+| T6 | Endpoint tulis lain (toko/kategori/produk/setting) + upload gambar produk | ✅ selesai (2026-08-29) |
+| T7 | Role owner/admin/kasir + otorisasi + layar kelola pengguna toko | ✅ selesai (2026-08-29) |
+| T8 | Rapikan test, buang label demo, README | sebagian — label demo sudah hilang, README belum |
 
 > Urutan T5/T6 sengaja ditukar dari rencana awal: user meminta jalur transaksi hidup lebih dulu.
 
@@ -35,7 +35,7 @@ sama bila butuh alasan di balik tiap keputusan.
 ## 2. Arahan user yang mengikat
 
 1. **Jangan menulis test baru** mulai T3 dan seterusnya — user menilai itu memperlambat.
-   Suite lama (110 test) TETAP dijalankan sebagai jaring regresi. Kalau sebuah test jadi usang
+   Suite lama (kini 112 test) TETAP dijalankan sebagai jaring regresi. Kalau sebuah test jadi usang
    karena perilaku memang sengaja berubah (mis. checkout kini menyimpan), perbarui atau hapus
    test itu sebagai bagian dari task — jangan dibiarkan merah, jangan dihapus diam-diam.
 2. **Verifikasi dengan menjalankan aplikasi dan memeriksa database**, karena tidak ada test baru.
@@ -57,9 +57,9 @@ pengguna hanya lahir dari owner atau admin toko.
 
 ### Upload gambar produk
 
-Kolom `products.image_path` (nullable) sudah ada. Penanganan upload sungguhan belum dikerjakan —
-masuk T6. Keputusan default: **satu gambar per produk**, JPG/PNG/WebP, maks 2 MB, disimpan di disk
-`public` lewat `storage:link`, berkas lama dihapus saat diganti.
+Sudah dikerjakan di T6 (2026-08-29): **satu gambar per produk**, JPG/PNG/WebP, maks 2 MB, disimpan
+di disk `public` lewat `storage:link` (`App\Support\ProductImage`), berkas lama dihapus saat
+diganti maupun saat produknya dihapus.
 
 ---
 
@@ -72,7 +72,7 @@ masuk T6. Keputusan default: **satu gambar per produk**, JPG/PNG/WebP, maks 2 MB
 - **User demo:** `demo@pos.test` / `password` (email sudah terverifikasi)
 - **Gerbang verifikasi:**
   ```bash
-  php artisan test          # 110 lulus, 496 assertion
+  php artisan test          # 112 lulus, 515 assertion
   npx vitest run            # 14 lulus
   npm run check             # lint + types + unit
   npm run build
@@ -84,10 +84,19 @@ masuk T6. Keputusan default: **satu gambar per produk**, JPG/PNG/WebP, maks 2 MB
 
 ---
 
-## 4. T3 (seeder) — keadaan persisnya
+## 4. T3 (seeder) — SUDAH DIVERIFIKASI (2026-08-29)
 
-Agen T3 **dihentikan user tepat sebelum menulis report**. Kerjanya di-commit sebagai WIP supaya
-tidak hilang, **tetapi belum diverifikasi sama sekali**:
+Hasil `php artisan migrate:fresh --seed` lalu query nyata:
+
+- 3 toko · 16 kategori · 72 produk · 30 transaksi · 57 item transaksi · 8 user · 8 baris pivot —
+  cocok dengan harapan dokumen ini.
+- `db:seed` dijalankan dua kali: jumlah baris TIDAK berlipat (idempoten).
+- `multirole@pos.test` benar punya dua baris pivot dengan role berbeda: `SDR=admin`, `KLD=kasir`.
+- Rumus uang dicocokkan bukan dengan membaca ulang, melainkan dengan **menghapus salinannya**:
+  seeder sekarang memanggil `App\Support\CartMath` — kelas yang sama yang dipakai checkout
+  sungguhan — jadi angka seed dan angka kasir tidak bisa lagi menyimpang.
+
+Catatan historis (keadaan sebelum verifikasi):
 
 - Seeder **belum pernah dijalankan**
 - Isi database **belum diperiksa**
@@ -97,7 +106,7 @@ tidak hilang, **tetapi belum diverifikasi sama sekali**:
 Berkas yang terlibat: `database/seeders/DatabaseSeeder.php` (dimodifikasi), `StoreSeeder.php`,
 `UserSeeder.php`, `TransactionSeeder.php` (baru).
 
-### Yang harus dilakukan penerus
+### Cara mengulang verifikasinya
 
 ```bash
 php artisan migrate:fresh --seed
@@ -144,7 +153,154 @@ Keputusan yang jangan dibalik tanpa alasan kuat:
 
 ---
 
-## 6. Yang harus dikerjakan T4 (jalur baca)
+## 5b. Hasil T4–T7 (2026-08-29)
+
+**T4 — jalur baca.** Semua controller membaca `App\Support\StoreData` (query Eloquent) dengan
+bentuk payload yang sama persis seperti `DemoData` dulu, jadi tidak ada halaman Vue yang perlu
+diubah karenanya. `{store}` kini route model binding (`AppServiceProvider::configureRouteBindings`),
+sehingga `/stores/2abc` dan `/stores/999` sama-sama 404. `Product.category_id` menjadi
+`number | null` di TypeScript dan halaman produk punya bucket filter "Tanpa kategori".
+`DemoData` SENGAJA tidak dibuang: seeder masih memakainya sebagai sumber data awal.
+
+**T5 — checkout menyimpan.** `App\Actions\Pos\ProcessCheckout` menulis transaksi + item dan
+memotong stok dalam satu `DB::transaction`, dengan `lockForUpdate` pada baris toko (penomoran
+struk) dan pada baris produk (stok). Harga diambil ulang dari record produk — payload klien
+diabaikan. Nomor struk melanjutkan urutan yang ada (`SDR-1011`, dst).
+
+**T6 — endpoint tulis + gambar.** Toko/kategori/produk/setting benar-benar menyimpan. SKU,
+barcode, dan nama kategori unik per toko; `category_id` wajib milik toko yang sama.
+Gambar produk: `App\Support\ProductImage`, disk `public`, maks 2 MB, berkas lama dihapus saat
+diganti atau saat produknya dihapus. Update produk memakai POST + `_method=put` karena PHP tidak
+mem-parse body multipart pada PUT.
+
+**T7 — role.** `App\Policies\StorePolicy` + middleware `can:` di `routes/web.php`:
+`operatePos` (owner/admin/kasir) untuk layar POS, `manage` (owner/admin) untuk sisanya,
+`create` (owner) untuk membuat toko. `ResolveStore` menolak 403 untuk non-anggota. Daftar toko
+dan store switcher hanya menampilkan toko yang boleh dilihat. Layar baru
+`stores/{store}/users` untuk membuat akun toko: owner boleh membuat admin & kasir, admin toko
+hanya kasir (ditegakkan di `StoreUserRequest`, bukan sekadar disembunyikan di UI).
+
+### Bukti verifikasi runtime (2026-08-29, server `php artisan serve`)
+
+| Yang diuji | Hasil |
+|---|---|
+| Checkout sungguh lewat HTTP | `SDR-1011` tersimpan, stok 11→9 dan 18→17 |
+| Harga dipalsukan jadi Rp 1 di payload | diabaikan; tersimpan Rp 5.500 & Rp 8.000 |
+| Produk milik toko lain di keranjang | ditolak, tidak ada baris tersimpan |
+| Stok tidak cukup / bayar kurang dari total | ditolak, tidak ada baris tersimpan |
+| Produk + gambar via multipart | tersimpan, berkas ada di disk, 200 lewat `/storage/...` |
+| Ganti gambar | berkas lama terhapus, tinggal satu berkas |
+| SKU ganda & kategori lintas toko | ditolak |
+| kasir → `/stores/1/pos` 200, `/stores/1` `/products` `/users` `/settings` 403, `/stores/2/pos` 403, `POST /stores` 403 | sesuai |
+| admin toko → semua halaman tokonya 200, `POST /stores` 403, toko lain 403 | sesuai |
+| owner → semua 200, `POST /stores` 302 (dibuat) | sesuai |
+| admin membuat kasir / membuat admin | kasir dibuat; admin DITOLAK |
+| akun kasir buatan admin | bisa login, buka POS, checkout `SDR-1012` atas namanya |
+
+Setelah verifikasi, database dev dikembalikan bersih lewat `migrate:fresh --seed`.
+
+## 5c. Cetak nota 58mm (2026-08-29, di luar T1–T8)
+
+Permintaan user: cetak nota ke printer thermal ESC/POS 58mm memakai
+`mike42/escpos-php`, dengan **setting printer per toko**.
+
+- **Setting** ada di kolom `stores`: `printer_connector` (`none`/`cups`/`file`),
+  `printer_target` (nama antrian CUPS, atau path device seperti `/dev/usb/lp0`),
+  `printer_auto_print`. Tidak ada konfigurasi di `.env` — sengaja, supaya satu-satunya sumber
+  kebenaran adalah setting toko. Default `none` berarti toko baru tidak pernah mencoba mencetak.
+- **`app/Printing/`** berisi tiga kelas: `ReceiptLayout` (menyusun teks nota, 32 kolom untuk
+  58mm dan 48 untuk 80mm — tidak menyentuh hardware, jadi bisa diuji), `ReceiptPrinter`
+  (membuka connector escpos-php dan mengirim), `PrinterUnavailable` (pesan gagal yang layak
+  dibaca kasir).
+- **Tiga jalur cetak:** otomatis setelah checkout (bisa dimatikan per toko), tombol di dialog
+  struk POS, dan tombol cetak ulang per baris di halaman Transaksi. Rutenya satu:
+  `POST stores/{store}/transactions/{transaction}/print`, ditaruh di grup `can:operatePos`
+  supaya kasir boleh mencetak ulang. Ditambah `POST stores/{store}/settings/print-test` untuk
+  tombol "Uji cetak" di Setting Toko.
+- **Kegagalan printer tidak pernah membatalkan transaksi.** Checkout mengembalikan flash
+  `success` + `receipt` (id & nomor struk) seperti biasa, dan menambahkan flash `error` bila
+  cetaknya gagal. Efek samping bagus: badge keranjang POS kini menampilkan nomor struk asli,
+  bukan `KODE-DRAFT` lagi.
+- **Perbaikan sampingan:** `SettingRequest::prepareForValidation()` mengembalikan null menjadi
+  string kosong untuk `receipt_header`/`receipt_footer`/`printer_target`. Tanpa itu,
+  mengosongkan footer struk berakhir sebagai error database — bug lama yang baru terlihat
+  ketika kolom printer ikut boleh kosong.
+
+### Bukti verifikasi (2026-08-29)
+
+Printer thermal fisik tidak tersedia di mesin ini (CUPS hanya punya `CX583` dan sedang
+disabled), jadi verifikasi memakai connector `file` yang menulis ke berkas — isinya byte yang
+persis sama dengan yang akan dikirim ke `/dev/usb/lp0`.
+
+| Yang diuji | Hasil |
+|---|---|
+| Uji cetak dari Setting Toko | nota uji keluar, 32 kolom, penggaris kolom pas |
+| Cetak otomatis saat checkout | nota `SDR-1012` lengkap: item, PPN, total, kembalian |
+| Byte ESC/POS | `1B 40` (init) di awal, `1B 64 03` (feed) + `1D 56 41 03` (cut) di akhir |
+| Cetak ulang oleh owner dan oleh kasir | dua-duanya 302 + nota keluar |
+| Printer tidak ada (`cups` ke antrian palsu) | transaksi `SDR-1013` TETAP tersimpan, stok tetap berkurang, kasir dapat flash error berisi daftar printer yang tersedia |
+| Nota transaksi toko lain lewat URL toko ini | 404 |
+
+**Yang belum pernah diuji manusia:** cetakan di atas kertas thermal sungguhan. Semua bukti di
+atas adalah byte yang benar terbentuk dan terkirim ke tujuan, bukan kertas yang keluar.
+
+### Printer Bluetooth (RFCOMM) — ditambahkan 2026-08-29
+
+Printer USB gagal total di mesin ini: kernel berulang kali menolak enumerasi
+(`usb 3-5: device not accepting address, error -71` → `unable to enumerate USB device`),
+sehingga job menumpuk di CUPS dengan alasan *"Waiting for printer to become available"*.
+Diganti ke printer Bluetooth **RPP210A** yang sudah ter-pairing.
+
+**Backend `bluez-cups` TIDAK bisa dipakai** untuk printer SPP semacam ini — ia selalu
+menjawab *"Can't open Bluetooth connection"*. Jangan buang waktu mengulangi jalur itu.
+
+Yang berhasil: soket **RFCOMM langsung**, dan kanalnya **5**, bukan 1 (kanal 1–4 habis waktu
+tanpa jawaban). Karena PHP tidak bisa membuka soket `AF_BLUETOOTH`, pengirimannya diserahkan
+ke `scripts/bluetooth-print.py` — Python bisa melakukannya **tanpa root**, tanpa
+`sudo rfcomm bind`, dan tanpa `/dev/rfcomm0` yang hilang setiap reboot.
+
+- `App\Printing\BluetoothPrintConnector` — connector escpos-php yang menampung seluruh byte
+  nota lalu mengirimnya sekali jalan lewat helper itu saat `finalize()`. Menampung dulu
+  (bukan per potong) supaya sambungan yang putus di tengah tidak menyisakan nota separuh.
+  Argumen dioper sebagai array ke `Process`, tidak lewat shell — alamat MAC dari database
+  tidak bisa jadi injeksi perintah.
+- Kolom baru `stores.printer_channel` (default 1). Nomornya berbeda antar merek, jadi harus
+  bisa disetel per toko. Setting Toko menampilkan kolom kanal hanya saat koneksi Bluetooth
+  dipilih, dan alamatnya divalidasi berformat MAC.
+- Setting yang terbukti bekerja: koneksi **bluetooth**, tujuan **66:32:49:E9:6D:04**, kanal **5**.
+
+**Terverifikasi dengan kertas sungguhan (dikonfirmasi user):** tombol Uji cetak dan checkout POS
+(`SDR-1013`) sama-sama mengeluarkan nota dari printer.
+
+**Bug yang ikut ketahuan dan diperbaiki:** jalur gagal `ReceiptPrinter::send()` memanggil
+`$connector->close()` — method yang TIDAK PERNAH ada di interface `PrintConnector`. Errornya
+ditelan blok catch, jadi kode itu seolah membersihkan sesuatu padahal tidak melakukan apa pun.
+Dihapus. `finalize()` bukan penggantinya: pada `CupsPrintConnector`, `finalize()` justru
+MENGIRIM job, sehingga nota separuh jadi bisa ikut tercetak.
+
+**Keterbatasan yang harus diketahui:** notifikasi "Nota dikirim ke printer" berarti byte
+diterima printer, BUKAN bukti kertas keluar — jalur RFCOMM tidak memberi umpan balik. Kertas
+habis atau penutup terbuka tidak akan terdeteksi aplikasi.
+
+### Notifikasi sukses/gagal — BUG LAMA yang diperbaiki 2026-08-29
+
+`FlashToaster` + vue-sonner sudah terpasang sejak fase 1, TAPI notifikasinya tidak pernah
+terlihat: **vue-sonner v2 tidak lagi menyuntikkan CSS-nya sendiri**, dan
+`import 'vue-sonner/style.css'` tidak pernah ada di `resources/js/app.ts`. Toast tetap masuk
+DOM, hanya tanpa posisi/warna/animasi — jadi tampak seperti fitur yang tidak ada. Bundle CSS
+hasil build memang tidak memuat satu pun aturan `data-sonner-toaster` sebelum perbaikan ini.
+
+Sekalian dirapikan: toast sukses 4 detik, toast gagal 10 detik + tombol tutup (pesan printer
+perlu dibaca pelan-pelan), penjaga anti-duplikat untuk kunjungan `preserveState`, dan
+`expand: true` pada `Toaster` supaya dua notifikasi yang muncul bersamaan (transaksi tersimpan
++ nota gagal dicetak) tidak saling menutupi.
+
+Diverifikasi dengan Chrome headless lewat CDP (Playwright tidak terpasang): tangkapan layar
+memperlihatkan toast hijau "Nota uji dikirim ke printer.", toast merah berisi pesan printer
+tidak ditemukan, dan checkout POS yang memunculkan keduanya sekaligus di atas dialog struk
+bernomor asli.
+
+## 6. Catatan T4 (jalur baca) — sudah dikerjakan, disimpan sebagai rujukan
 
 - Ganti pemanggilan `DemoData::*` di controller dengan query Eloquent. `products_count` /
   `items_count` pakai `withCount`, bukan kolom.
@@ -162,21 +318,27 @@ Keputusan yang jangan dibalik tanpa alasan kuat:
 
 ## 7. Utang teknis warisan fase 1 (sudah ditriase, boleh dikerjakan sambil jalan)
 
-**Wajib diurus saat endpoint jadi menyimpan** (docblock peringatannya sudah ada di kode):
+**SUDAH DITUTUP (2026-08-29):**
 
-- `CheckoutRequest`: `items.*.price` dan `items.*.discount` datang dari klien dan hanya divalidasi
-  tipe/tanda. **Harga WAJIB dihitung ulang dari record produk di server**, dan `items.*.product_id`
-  WAJIB di-scope ke toko yang di-resolve — kalau tidak, itu lubang price-tampering dan penulisan
-  lintas-toko.
-- `ProductRequest`: `category_id` bertipe `integer` tanpa `exists`/scoping toko.
+- `CheckoutRequest`: `items.*.product_id` kini di-scope ke toko lewat `Rule::exists(...)`, dan
+  harga diambil ulang dari record produk di `ProcessCheckout` — payload klien diabaikan.
+  Keduanya diuji lewat HTTP sungguhan (lihat §5b).
+- `ProductRequest`: `category_id` kini `exists` + di-scope ke toko; SKU/barcode unik per toko.
+- `ResolveStore` cast `(int)` — hilang karena route model binding.
 
-**Lain-lain (tidak menghalangi):** empty-state di daftar toko/kategori/transaksi; `ssr.ts` belum
+**Masih terbuka (tidak menghalangi):** empty-state di daftar toko/kategori/transaksi; `ssr.ts` belum
 dibungkus `h('div')` seperti `app.ts` (hydration mismatch bila `dev:ssr` dipakai); spec §6.3 minta
-komponen `Pagination` tapi halaman produk memakai dua tombol polos; `useCart` tidak memeriksa stok
-(jadi POS bisa menjual 200 unit dari stok 4 — relevan begitu stok jadi nyata); tombol Batal/Hapus
-tidak disabled saat processing; satu instance `form` dipakai create/edit/delete di halaman kategori
-& produk; `format.ts` dan `store-path.ts` belum punya test Vitest; `currentStore!` di 6 halaman
-bergantung pada rute selalu berada di bawah middleware `resolve.store`.
+komponen `Pagination` tapi halaman produk memakai dua tombol polos; **`useCart` tidak memeriksa stok
+di klien** — server menolak dengan benar, tapi kasir baru tahu saat menekan bayar; tombol
+Batal/Hapus tidak disabled saat processing; satu instance `form` dipakai create/edit/delete di
+halaman kategori & produk; `format.ts` dan `store-path.ts` belum punya test Vitest; `currentStore!`
+di 6 halaman bergantung pada rute selalu berada di bawah middleware `resolve.store`.
+
+**Baru, dari T4–T7:** dashboard memakai arti harfiah "hari ini" — kartu `sales_today` dkk. bernilai
+nol pada database hasil seed (transaksinya bertanggal 2026-08-24) sampai ada checkout hari ini;
+`recent_transactions` sengaja tidak dibatasi tanggal supaya dashboard tidak kosong melompong.
+Halaman POS masih menampilkan `KODE-DRAFT` di badge keranjang — nomor struk sungguhan baru muncul
+di pesan flash setelah transaksi tersimpan.
 
 **Belum pernah diuji manusia:** membuka dropdown store switcher dengan klik sungguhan. Playwright
 tidak bisa membukanya (Reka UI menolak event sintetis) — URL tujuannya sudah terverifikasi, tinggal
@@ -210,8 +372,18 @@ cd /home/demantri/projects/laravel/pos-app-v2
 git checkout main
 git log --oneline -5
 
-# lanjutkan dari §4: verifikasi seeder WIP
 php artisan migrate:fresh --seed
+composer run dev            # http://127.0.0.1:8000
 ```
 
-Lalu kerjakan T4 → T5 (checkout menyimpan) sesuai §1.
+Akun demo setelah seed (semua kata sandi `password`):
+
+| Email | Peran |
+|---|---|
+| `demo@pos.test` | owner — semua toko, boleh membuat toko baru |
+| `admin.sdr@pos.test` | admin Toko Sudirman |
+| `kasir.sdr@pos.test` | kasir Toko Sudirman (hanya layar POS) |
+| `multirole@pos.test` | admin di SDR sekaligus kasir di KLD |
+
+Sisa pekerjaan: **T8** — README (belum menyebut role, seeder, dan upload gambar), plus utang teknis
+di §7 yang masih terbuka.

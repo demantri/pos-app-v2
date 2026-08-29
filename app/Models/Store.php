@@ -32,6 +32,11 @@ class Store extends Model
         'paper_size',
         'open_time',
         'close_time',
+        'printer_connector',
+        'printer_target',
+        'printer_channel',
+        'printer_feed_lines',
+        'printer_auto_print',
     ];
 
     /**
@@ -45,7 +50,27 @@ class Store extends Model
             'is_active' => 'boolean',
             'tax_percent' => 'integer',
             'rounding' => 'integer',
+            'printer_channel' => 'integer',
+            'printer_feed_lines' => 'integer',
+            'printer_auto_print' => 'boolean',
         ];
+    }
+
+    /**
+     * Berapa karakter yang muat dalam satu baris nota, mengikuti lebar
+     * kertas toko ini (font A: 32 karakter di 58mm, 48 di 80mm).
+     */
+    public function receiptWidth(): int
+    {
+        return $this->paper_size === '80mm' ? 48 : 32;
+    }
+
+    /**
+     * Toko ini punya printer yang dikonfigurasi.
+     */
+    public function hasPrinter(): bool
+    {
+        return $this->printer_connector !== 'none' && $this->printer_target !== '';
     }
 
     /**

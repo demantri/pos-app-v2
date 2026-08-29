@@ -2,34 +2,59 @@
 
 namespace App\Http\Requests\Store;
 
+use App\Models\Product;
+use App\Models\Store;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class ProductRequest extends FormRequest
 {
     /**
-     * PERINGATAN UNTUK FASE 2 (persistensi produk):
-     *
-     * `category_id` di bawah ini hanya divalidasi sebagai `integer`, tanpa
-     * `exists:categories,id` maupun scoping ke toko yang sedang di-resolve.
-     * Endpoint ini saat ini tidak menyimpan apa pun, jadi masih inert — tapi
-     * begitu fase 2 menyimpan produk, tambahkan aturan yang memastikan
-     * `category_id` benar-benar ada DAN milik toko yang sama dengan produk
-     * yang sedang dibuat/diubah, supaya tidak bisa menautkan produk toko A ke
-     * kategori milik toko B.
+     * SKU dan barcode unik PER TOKO (unique (store_id, sku) dan
+     * (store_id, barcode) di migration), dan `category_id` wajib menunjuk
+     * kategori milik toko yang sama — tanpa itu produk toko A bisa
+     * ditautkan ke kategori toko B.
      *
      * @return array<string, mixed>
      */
     public function rules(): array
     {
+        $store = $this->route('store');
+
+        abort_if(! $store instanceof Store, 404);
+
+        $storeId = $store->getKey();
+        $product = $this->route('product');
+        $productId = $product instanceof Product ? $product->getKey() : null;
+
         return [
             'name' => ['required', 'string', 'max:120'],
-            'sku' => ['required', 'string', 'max:40'],
-            'barcode' => ['nullable', 'string', 'max:40'],
-            'category_id' => ['required', 'integer'],
+            'sku' => [
+                'required',
+                'string',
+                'max:40',
+                Rule::unique('products', 'sku')->where('store_id', $storeId)->ignore($productId),
+            ],
+            'barcode' => [
+                'nullable',
+                'string',
+                'max:40',
+                Rule::unique('products', 'barcode')->where('store_id', $storeId)->ignore($productId),
+            ],
+            'category_id' => [
+                'required',
+                'integer',
+                Rule::exists('categories', 'id')->where('store_id', $storeId),
+            ],
             'price' => ['required', 'integer', 'min:0'],
             'stock' => ['required', 'integer', 'min:0'],
             'unit' => ['required', 'string', 'max:20'],
             'is_active' => ['required', 'boolean'],
+            // Satu gambar per produk, disimpan di disk `public`.
+            'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            // Dikirim klien saat pengguna menghapus gambar yang sudah ada
+            // tanpa menggantinya dengan yang baru.
+            'remove_image' => ['nullable', 'boolean'],
         ];
     }
 
@@ -45,6 +70,18 @@ class ProductRequest extends FormRequest
             'price' => 'harga',
             'stock' => 'stok',
             'unit' => 'satuan',
+            'image' => 'gambar produk',
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'category_id.exists' => 'Kategori tidak ditemukan di toko ini.',
+            'image.max' => 'Gambar produk maksimal 2 MB.',
         ];
     }
 }

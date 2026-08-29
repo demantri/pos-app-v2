@@ -32,6 +32,13 @@ class User extends Authenticatable
     ];
 
     /**
+     * Cache role per toko selama satu request.
+     *
+     * @var array<int, string|null>
+     */
+    protected array $storeRoles = [];
+
+    /**
      * The attributes that should be hidden for serialization.
      *
      * @var list<string>
@@ -69,5 +76,69 @@ class User extends Authenticatable
         return $this->belongsToMany(Store::class)
             ->withPivot('role')
             ->withTimestamps();
+    }
+
+    /**
+     * Owner bisnis aplikasi: satu-satunya yang boleh membuat toko baru, dan
+     * boleh mengelola toko mana pun. Wewenang GLOBAL, bukan role per toko.
+     */
+    public function isOwner(): bool
+    {
+        return (bool) $this->is_owner;
+    }
+
+    /**
+     * Role user ini DI TOKO tertentu: 'admin', 'kasir', atau null bila ia
+     * bukan anggota toko itu. Owner sengaja mengembalikan null di sini —
+     * wewenangnya tidak datang dari pivot.
+     */
+    public function roleIn(Store $store): ?string
+    {
+        $storeId = $store->getKey();
+
+        // Dihafal per request: satu halaman bisa menanyakan role yang sama
+        // beberapa kali (middleware, policy, shared prop).
+        if (! array_key_exists($storeId, $this->storeRoles)) {
+            $this->storeRoles[$storeId] = $this->stores()
+                ->whereKey($storeId)
+                ->first()?->pivot?->role;
+        }
+
+        return $this->storeRoles[$storeId];
+    }
+
+    public function isAdminOf(Store $store): bool
+    {
+        return $this->roleIn($store) === 'admin';
+    }
+
+    public function isCashierOf(Store $store): bool
+    {
+        return $this->roleIn($store) === 'kasir';
+    }
+
+    /**
+     * Boleh masuk ke toko ini sama sekali (kasir pun termasuk).
+     */
+    public function canAccessStore(Store $store): bool
+    {
+        return $this->isOwner() || $this->roleIn($store) !== null;
+    }
+
+    /**
+     * Boleh mengelola isi toko: produk, kategori, transaksi, setting, dan
+     * pengguna toko. Kasir TIDAK termasuk.
+     */
+    public function canManageStore(Store $store): bool
+    {
+        return $this->isOwner() || $this->isAdminOf($store);
+    }
+
+    /**
+     * Label peran untuk ditampilkan: owner / admin / kasir / null.
+     */
+    public function roleLabelFor(Store $store): ?string
+    {
+        return $this->isOwner() ? 'owner' : $this->roleIn($store);
     }
 }

@@ -2,6 +2,9 @@
 
 namespace Tests\Feature\Stores;
 
+use App\Models\Category;
+use App\Models\Product;
+use App\Models\Store;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -13,13 +16,13 @@ class ProductValidationTest extends TestCase
     /**
      * @return array<string, mixed>
      */
-    private function validPayload(): array
+    private function validPayload(?int $categoryId = null): array
     {
         return [
             'name' => 'Kopi Susu Gula Aren',
             'sku' => 'SDR-999',
             'barcode' => '8991000000999',
-            'category_id' => 101,
+            'category_id' => $categoryId ?? 101,
             'price' => 12000,
             'stock' => 25,
             'unit' => 'pcs',
@@ -29,29 +32,32 @@ class ProductValidationTest extends TestCase
 
     public function test_product_requires_core_fields(): void
     {
-        $this->actingAs(User::factory()->create());
+        $this->actingAs(User::factory()->owner()->create());
+        $store = Store::factory()->create();
 
-        $this->from(route('stores.products.index', ['store' => 1]))
-            ->post(route('stores.products.store', ['store' => 1]), [])
+        $this->from(route('stores.products.index', ['store' => $store->id]))
+            ->post(route('stores.products.store', ['store' => $store->id]), [])
             ->assertSessionHasErrors(['name', 'sku', 'category_id', 'price', 'stock', 'unit', 'is_active']);
     }
 
     public function test_price_and_stock_must_not_be_negative(): void
     {
-        $this->actingAs(User::factory()->create());
+        $this->actingAs(User::factory()->owner()->create());
+        $store = Store::factory()->create();
 
         $payload = $this->validPayload();
         $payload['price'] = -1;
         $payload['stock'] = -5;
 
-        $this->from(route('stores.products.index', ['store' => 1]))
-            ->post(route('stores.products.store', ['store' => 1]), $payload)
+        $this->from(route('stores.products.index', ['store' => $store->id]))
+            ->post(route('stores.products.store', ['store' => $store->id]), $payload)
             ->assertSessionHasErrors(['price', 'stock']);
     }
 
     public function test_product_fields_reject_values_longer_than_their_max_length(): void
     {
-        $this->actingAs(User::factory()->create());
+        $this->actingAs(User::factory()->owner()->create());
+        $store = Store::factory()->create();
 
         $payload = $this->validPayload();
         $payload['name'] = str_repeat('a', 121);
@@ -59,26 +65,65 @@ class ProductValidationTest extends TestCase
         $payload['barcode'] = str_repeat('1', 41);
         $payload['unit'] = str_repeat('a', 21);
 
-        $this->from(route('stores.products.index', ['store' => 1]))
-            ->post(route('stores.products.store', ['store' => 1]), $payload)
+        $this->from(route('stores.products.index', ['store' => $store->id]))
+            ->post(route('stores.products.store', ['store' => $store->id]), $payload)
             ->assertSessionHasErrors(['name', 'sku', 'barcode', 'unit']);
     }
 
-    public function test_valid_product_can_be_created_updated_and_deleted_in_demo_mode(): void
+    public function test_valid_product_is_created_updated_and_deleted_in_the_database(): void
     {
-        $this->actingAs(User::factory()->create());
-        $from = route('stores.products.index', ['store' => 1]);
+        $this->actingAs(User::factory()->owner()->create());
+        $store = Store::factory()->create();
+        $category = Category::factory()->create(['store_id' => $store->id]);
+        $from = route('stores.products.index', ['store' => $store->id]);
 
         $this->from($from)
-            ->post(route('stores.products.store', ['store' => 1]), $this->validPayload())
+            ->post(route('stores.products.store', ['store' => $store->id]), $this->validPayload($category->id))
             ->assertSessionHas('success');
 
-        $this->from($from)
-            ->put(route('stores.products.update', ['store' => 1, 'product' => 1001]), $this->validPayload())
-            ->assertSessionHas('success');
+        $this->assertDatabaseHas('products', [
+            'store_id' => $store->id,
+            'category_id' => $category->id,
+            'sku' => 'SDR-999',
+            'name' => 'Kopi Susu Gula Aren',
+            'price' => 12000,
+            'stock' => 25,
+        ]);
+
+        $product = Product::query()->where('store_id', $store->id)->where('sku', 'SDR-999')->firstOrFail();
 
         $this->from($from)
-            ->delete(route('stores.products.destroy', ['store' => 1, 'product' => 1001]))
+            ->put(route('stores.products.update', ['store' => $store->id, 'product' => $product->id]), [
+                ...$this->validPayload($category->id),
+                'name' => 'Kopi Susu Aren Baru',
+                'price' => 15000,
+            ])
             ->assertSessionHas('success');
+
+        $this->assertDatabaseHas('products', [
+            'id' => $product->id,
+            'name' => 'Kopi Susu Aren Baru',
+            'price' => 15000,
+        ]);
+
+        $this->from($from)
+            ->delete(route('stores.products.destroy', ['store' => $store->id, 'product' => $product->id]))
+            ->assertSessionHas('success');
+
+        $this->assertDatabaseMissing('products', ['id' => $product->id]);
+    }
+
+    public function test_product_of_another_store_cannot_be_touched_through_this_store(): void
+    {
+        $this->actingAs(User::factory()->owner()->create());
+        $store = Store::factory()->create();
+        $otherStore = Store::factory()->create();
+        $foreign = Product::factory()->create(['store_id' => $otherStore->id]);
+
+        $this->from(route('stores.products.index', ['store' => $store->id]))
+            ->delete(route('stores.products.destroy', ['store' => $store->id, 'product' => $foreign->id]))
+            ->assertNotFound();
+
+        $this->assertDatabaseHas('products', ['id' => $foreign->id]);
     }
 }

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Stores;
 
+use App\Models\Store;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia;
@@ -33,9 +34,10 @@ class RoutesTest extends TestCase
     #[DataProvider('storePages')]
     public function test_authenticated_user_can_open_store_page(string $routeName, string $component, array $props): void
     {
-        $this->actingAs(User::factory()->create());
+        $this->actingAs(User::factory()->owner()->create());
+        $store = Store::factory()->create();
 
-        $response = $this->get(route($routeName, ['store' => 1]));
+        $response = $this->get(route($routeName, ['store' => $store->id]));
 
         $response->assertOk()->assertInertia(function (AssertableInertia $page) use ($component, $props) {
             $page->component($component);
@@ -54,7 +56,9 @@ class RoutesTest extends TestCase
     #[DataProvider('storePages')]
     public function test_guest_is_redirected_from_store_page(string $routeName, string $component, array $props): void
     {
-        $this->get(route($routeName, ['store' => 1]))->assertRedirect(route('login'));
+        $store = Store::factory()->create();
+
+        $this->get(route($routeName, ['store' => $store->id]))->assertRedirect(route('login'));
     }
 
     /**
@@ -63,14 +67,15 @@ class RoutesTest extends TestCase
     #[DataProvider('storePages')]
     public function test_unknown_store_returns_not_found(string $routeName, string $component, array $props): void
     {
-        $this->actingAs(User::factory()->create());
+        $this->actingAs(User::factory()->owner()->create());
 
         $this->get(route($routeName, ['store' => 999]))->assertNotFound();
     }
 
     public function test_store_list_is_reachable(): void
     {
-        $this->actingAs(User::factory()->create());
+        $this->actingAs(User::factory()->owner()->create());
+        Store::factory()->count(3)->create();
 
         $this->get(route('stores.index'))
             ->assertOk()

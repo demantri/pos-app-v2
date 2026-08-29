@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Head, router, usePage } from '@inertiajs/vue3';
 import { useEventListener } from '@vueuse/core';
-import { Minus, Plus, Receipt, Search, Trash2 } from 'lucide-vue-next';
+import { Minus, Plus, Printer, Receipt, Search, Trash2 } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import { toast } from 'vue-sonner';
 import { Badge } from '@/components/ui/badge';
@@ -26,7 +26,14 @@ import PosLayout from '@/layouts/PosLayout.vue';
 import { changeFor, lineSubtotal } from '@/lib/cart';
 import { formatRupiah } from '@/lib/format';
 import { storePath } from '@/lib/store-path';
-import type { BreadcrumbItem, Category, PaymentMethod, Product, StoreSettings } from '@/types';
+import type {
+    BreadcrumbItem,
+    Category,
+    PaymentMethod,
+    Product,
+    ReceiptFlash,
+    StoreSettings,
+} from '@/types';
 
 const props = defineProps<{
     products: Product[];
@@ -38,8 +45,15 @@ const page = usePage();
 // Halaman ini hanya dirender di bawah middleware `resolve.store`, jadi currentStore selalu ada.
 const currentStore = computed(() => page.props.currentStore!);
 
+// Kasir tidak boleh membuka dashboard toko, jadi remah roti tokonya
+// mengarah balik ke POS supaya tidak menjadi tautan buntu ke halaman 403.
 const breadcrumbs = computed<BreadcrumbItem[]>(() => [
-    { title: currentStore.value.name, href: storePath(currentStore.value.id) },
+    {
+        title: currentStore.value.name,
+        href: page.props.permissions.can_manage_current_store
+            ? storePath(currentStore.value.id)
+            : storePath(currentStore.value.id, 'pos'),
+    },
     { title: 'POS', href: storePath(currentStore.value.id, 'pos') },
 ]);
 
@@ -64,7 +78,12 @@ const posting = ref(false);
 const paymentMethod = ref<PaymentMethod>('tunai');
 const paid = ref(0);
 const discountInput = ref(0);
-const orderNumber = ref(`${props.settings.code}-DRAFT`);
+
+// Transaksi yang baru saja tersimpan (dikirim checkout lewat flash). Selama
+// belum ada, badge keranjang hanya menampilkan draft.
+const lastReceipt = ref<ReceiptFlash | null>(null);
+const orderNumber = computed(() => lastReceipt.value?.number ?? `${props.settings.code}-DRAFT`);
+const printing = ref(false);
 
 const sellableProducts = computed(() => props.products.filter((product) => product.is_active));
 
@@ -158,6 +177,9 @@ function submitPayment(): void {
             preserveScroll: true,
             preserveState: true,
             onSuccess: () => {
+                // Props sudah ditukar Inertia saat callback ini jalan, jadi
+                // flash-nya berisi transaksi yang barusan tersimpan.
+                lastReceipt.value = page.props.flash.receipt ?? null;
                 payDialogOpen.value = false;
                 receiptDialogOpen.value = true;
             },
@@ -172,8 +194,34 @@ function submitPayment(): void {
     );
 }
 
+/**
+ * Cetak ulang nota transaksi yang barusan tersimpan — dipakai ketika cetak
+ * otomatis gagal (printer mati, kertas habis) atau kasir butuh salinan
+ * kedua. Transaksinya sendiri sudah aman di database.
+ */
+function reprint(): void {
+    if (lastReceipt.value === null || printing.value) {
+        return;
+    }
+
+    printing.value = true;
+
+    router.post(
+        `${storePath(currentStore.value.id, 'transactions')}/${lastReceipt.value.id}/print`,
+        {},
+        {
+            preserveScroll: true,
+            preserveState: true,
+            onFinish: () => {
+                printing.value = false;
+            },
+        },
+    );
+}
+
 function startNewOrder(): void {
     receiptDialogOpen.value = false;
+    lastReceipt.value = null;
     cart.clear();
     paid.value = 0;
     paymentMethod.value = 'tunai';
@@ -264,8 +312,14 @@ useEventListener(window, 'keydown', (event: KeyboardEvent) => {
                             class="hover:border-primary focus-visible:ring-ring flex flex-col overflow-hidden rounded-xl border text-left transition focus-visible:ring-2 focus-visible:outline-none"
                             @click="cart.addProduct(product)"
                         >
-                            <div class="bg-muted text-muted-foreground flex aspect-square items-center justify-center text-xs">
-                                {{ product.category }}
+                            <div class="bg-muted text-muted-foreground flex aspect-square items-center justify-center overflow-hidden text-xs">
+                                <img
+                                    v-if="product.image_url"
+                                    :src="product.image_url"
+                                    :alt="product.name"
+                                    class="size-full object-cover"
+                                />
+                                <span v-else>{{ product.category }}</span>
                             </div>
                             <div class="flex flex-1 flex-col gap-1 p-3">
                                 <span class="line-clamp-2 text-sm font-medium">{{ product.name }}</span>
@@ -424,7 +478,12 @@ useEventListener(window, 'keydown', (event: KeyboardEvent) => {
             <DialogContent class="sm:max-w-sm" @close-auto-focus="onReceiptCloseAutoFocus">
                 <DialogHeader>
                     <DialogTitle>{{ settings.receipt_header }}</DialogTitle>
-                    <DialogDescription>{{ currentStore.address }}</DialogDescription>
+                    <DialogDescription>
+                        {{ currentStore.address }}
+                        <span v-if="lastReceipt" class="mt-1 block font-medium">
+                            No. {{ lastReceipt.number }}
+                        </span>
+                    </DialogDescription>
                 </DialogHeader>
 
                 <div class="space-y-2 text-sm">
@@ -457,7 +516,16 @@ useEventListener(window, 'keydown', (event: KeyboardEvent) => {
                     </p>
                 </div>
 
-                <DialogFooter>
+                <DialogFooter class="gap-2 sm:flex-col">
+                    <Button
+                        variant="outline"
+                        class="w-full"
+                        :disabled="printing || lastReceipt === null"
+                        @click="reprint"
+                    >
+                        <Printer class="size-4" />
+                        Cetak Nota
+                    </Button>
                     <Button class="w-full" @click="startNewOrder">Transaksi Baru</Button>
                 </DialogFooter>
             </DialogContent>

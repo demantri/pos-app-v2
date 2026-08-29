@@ -147,3 +147,56 @@ T1: Ruling: re-review terjadwal DILEWATI (user meminta kecepatan); saya verifika
   membaca kedua berkas hasil akhir. Biaya bila salah: satu regresi frontend lolos — tapi kedua
   Critical-nya sudah saya lihat tertutup di kodenya.
 T1: complete (commits a2e2234..c49740e)
+
+## Lanjutan 2026-08-29 (sesi berikutnya, tanpa subagent)
+
+Konteks: user bertanya "apakah transaksi pos ini sudah dapat digunakan?" — jawabannya waktu itu
+TIDAK (checkout masih `back()` tanpa menyimpan, seluruh jalur baca masih `DemoData`). User lalu
+meminta lanjut, kemudian menambahkan "jika t4, t5 sudah, lanjutkan saja langsung sampai t7".
+Dikerjakan berurutan dalam satu sesi, tanpa subagent dan tanpa review round terpisah.
+
+T3: DIVERIFIKASI (bukan dikerjakan ulang). migrate:fresh --seed → 3/16/72/30/57/8/8 sesuai
+  harapan; db:seed dua kali tidak menggandakan; multirole punya dua role di dua toko.
+  Ruling: kecocokan rumus uang seeder vs cart.ts tidak diperiksa dengan membaca ulang, melainkan
+  dengan MENGHAPUS DUPLIKASINYA — dibuat App\Support\CartMath (cerminan cart.ts), lalu
+  TransactionSeeder dan ProcessCheckout sama-sama memanggilnya. Salinan rumus di seeder (termasuk
+  roundTo privat-nya) dibuang. Biaya bila salah: satu kelas tambahan; imbalannya kelas divergensi
+  yang paling mahal di dokumen ini jadi tidak mungkin terjadi.
+
+T4: App\Support\StoreData menggantikan DemoData di seluruh controller + shared props, dengan
+  BENTUK PAYLOAD IDENTIK sehingga tidak ada halaman Vue yang perlu diubah karena pergantian sumber
+  data. {store} jadi route model binding lewat Route::model() di AppServiceProvider (bukan implicit
+  binding) supaya rute yang controller-nya tidak menuliskan Store di signature tetap terlindungi.
+  DemoData SENGAJA dipertahankan: seeder masih memakainya.
+  Ruling dashboard: `sales_today` dibaca harfiah (whereDate hari ini), sehingga pada DB hasil seed
+  kartunya nol. `recent_transactions` tidak dibatasi tanggal supaya dashboard tetap berisi.
+  Biaya bila salah: user mengira dashboard rusak — dicatat di handoff §7.
+
+T5: App\Actions\Pos\ProcessCheckout. lockForUpdate pada baris toko (menyerialkan penomoran struk)
+  dan pada baris produk (stok). Harga SELALU dari DB. qty digabung per produk sebelum cek stok
+  supaya klien tidak bisa memecah satu produk jadi beberapa baris untuk menembus stok.
+  Nomor struk dihitung dari max(number), bukan count(), supaya transaksi terhapus tidak membuat
+  nomor terpakai ulang.
+
+T6: endpoint tulis benar-benar menyimpan; unique per toko untuk SKU/barcode/nama kategori;
+  category_id di-scope ke toko. Gambar: App\Support\ProductImage, berkas lama dihapus SETELAH
+  update baris berhasil (bukan sebelum) supaya kegagalan tidak meninggalkan produk menunjuk berkas
+  hilang. Route group diberi scopeBindings() sehingga /stores/1/products/<id milik toko 2> = 404.
+  Update produk memakai POST + _method=put karena PHP tidak mem-parse multipart pada PUT;
+  form.transform() direset di jalur create dan delete supaya _method tidak bocor antar aksi.
+
+T7: StorePolicy (create/operatePos/manage/createAdmin) + middleware can: di routes. ResolveStore
+  menolak 403 untuk non-anggota — lapis dasar, policy yang membedakan admin vs kasir.
+  Daftar toko & storeOptions difilter per user. Layar stores/{store}/users.
+  Ruling: batas "admin hanya boleh membuat kasir" ditegakkan di StoreUserRequest (aturan Rule::in
+  yang isinya bergantung pada pembuatnya), bukan hanya disembunyikan di UI. Pengguna yang dibuat
+  lewat layar ini langsung email_verified_at=now() — kalau tidak, ia terhadang middleware
+  `verified` dan tidak bisa masuk sama sekali.
+
+Test: tidak ada test baru sesuai arahan user; test lama yang jadi usang diperbarui (aktor kini
+  punya role nyata, id toko/produk/kategori dari factory, assertion "demo flash" diganti assertion
+  isi database). 112 lulus / 515 assertion. UserFactory dapat state owner().
+
+Verifikasi runtime: seluruh klaim di atas diuji lewat HTTP sungguhan terhadap php artisan serve —
+  matriks hasilnya ada di handoff §5b. Database dev dikembalikan bersih (migrate:fresh --seed)
+  setelah selesai.
