@@ -1,72 +1,133 @@
-# POS Multi-Toko
+# DeePOS
 
-Aplikasi kasir (POS) multi-toko: Laravel 12 + Inertia 2 + Vue 3 + shadcn-vue,
-dengan cetak nota ke printer thermal ESC/POS 58mm.
+Aplikasi kasir (POS) multi-toko: satu aplikasi mengelola banyak toko, tapi
+transaksi, master data, dan laporan berdiri sendiri per toko. Dilengkapi cetak
+nota ke printer thermal 58mm.
 
-## Status
+Dibangun dengan Laravel 12 + Inertia 2 + Vue 3 + shadcn-vue.
 
-Transaksi sudah berjalan penuh: kasir memilih produk, checkout menyimpan
-transaksi beserta itemnya dalam satu DB transaction, stok berkurang, dan
-notanya dicetak. Hak akses per peran sudah ditegakkan di server.
+---
 
-Yang belum: fitur langganan (subscribe) — direncanakan, belum dikerjakan.
+## Peran
 
-Riwayat keputusan dan catatan serah terima ada di `docs/handoff/` — mulai dari
-`2026-08-29-sesi-fase-3-dan-ui.md` untuk keadaan terkini, lalu
-`2026-08-25-fase-2-handoff.md` untuk sejarah skema dan alasan keputusannya.
+Peran bersifat **per toko** — seseorang bisa menjadi admin di satu toko sekaligus
+kasir di toko lain. Hanya satu wewenang yang bersifat global: pemilik aplikasi.
 
-## Peran dan hak akses
+### Owner aplikasi
 
-Peran bersifat **per toko** lewat pivot `store_user.role`, kecuali satu
-wewenang global: `users.is_owner`.
+Pemilik aplikasinya sendiri. Ia mengurus daftar toko, bukan isinya.
 
-| | Owner aplikasi | Admin toko | Kasir |
-|---|---|---|---|
-| Daftar semua toko | ✅ | hanya tokonya | hanya tokonya |
-| Tambah / ubah identitas toko | ✅ | ❌ | ❌ |
-| Status buka-tutup & arsip toko | ✅ | ❌ | ❌ |
-| Kelola pengguna toko | ✅ semua toko | ✅ tokonya (kasir saja) | ❌ |
-| Dashboard, produk, kategori, transaksi, setting | ❌ | ✅ tokonya | ❌ |
-| Layar POS | ❌ | ✅ | ✅ |
+- Menambah toko baru dan mengubah identitasnya (nama, kode, alamat, telepon)
+- Membuka atau menutup toko, mengarsipkan, dan memulihkannya kembali
+- Membuatkan akun untuk toko mana pun, termasuk admin toko
+- Melihat seluruh akun aplikasi
 
-Owner **tidak bisa melihat transaksi** toko yang sudah terdaftar. Satu-satunya
-pintunya ke dalam sebuah toko adalah layar Pengguna Toko — itu yang membuat
-toko baru bisa mendapat admin pertamanya.
+**Tidak bisa** membuka isi toko: dashboard toko, POS, produk, kategori, transaksi,
+maupun setting toko. Ia tidak melihat penjualan toko yang sudah terdaftar.
 
-**Toko nonaktif mengunci stafnya keluar.** Begitu owner menutup sebuah toko,
-admin dan kasirnya tidak bisa login lagi, dan sesi yang sedang terbuka langsung
-terputus pada permintaan berikutnya. Orang yang masih punya toko aktif lain
-tetap bisa masuk — hanya toko yang tutup itu yang tertutup baginya. Toko
-terarsip diperlakukan sama. Owner tidak pernah terkunci; dialah yang membuka
-kembali tokonya, dan ia tetap bisa membuka layar Pengguna Toko di sana.
+### Admin toko
 
-Catatan data demo: Toko Serpong di-seed dalam keadaan nonaktif, jadi
-`admin.spg@pos.test` dan `kasir.spg@pos.test` memang tidak bisa login sampai
-tokonya dibuka.
+Pengelola sebuah toko. Ia memegang seluruh isi tokonya.
 
-**Pengguna yang hanya punya satu toko masuk langsung ke tokonya** setelah login —
-kasir ke layar POS, admin toko ke dashboard. Pemilih toko dan menu Daftar Toko
-disembunyikan baginya, karena keduanya cuma jalan memutar ke tempat yang sama.
+- Master produk beserta gambar, kategori, dan setting toko
+- Riwayat transaksi dan cetak ulang notanya
+- Membuatkan akun **kasir** untuk tokonya
 
-Seorang pengguna bisa menjadi admin di satu toko sekaligus kasir di toko lain.
-Pendaftaran mandiri **ditutup di tingkat konfigurasi**: `Features::registration()`
-dimatikan di `config/fortify.php`, rute `/register` tidak ada, dan halaman
-`auth/Register.vue` sudah dihapus. Akun hanya lahir dari owner atau admin toko.
-Menyalakannya kembali berarti mengembalikan ketiganya.
+**Tidak bisa** membuat toko baru, mengubah identitas atau status tokonya, dan
+tidak bisa membuat admin lain.
 
-Data tiap toko terpisah penuh — transaksi, master data, dan laporannya hanya
-bisa dibuka pengguna toko itu sendiri. Percobaan menyentuh milik toko lain
-ditolak 403 (bukan anggota) atau 404 (id milik toko lain), termasuk lewat URL
-toko sendiri.
+### Kasir
 
-Satu konsekuensi dari isolasi itu: **email harus unik di seluruh aplikasi**, dan
-pesan galatnya sengaja netral ("Email ini tidak bisa dipakai") supaya admin
-sebuah toko tidak bisa menyimpulkan siapa saja yang terdaftar di toko lain.
-Orang yang bekerja di dua toko perlu dua email berbeda; menautkan satu akun ke
-toko kedua hanya bisa lewat pivot `store_user` di database, tidak lewat UI.
+Melayani penjualan di sebuah toko.
 
-Penegakannya ada di `App\Policies\StorePolicy` dan middleware `can:` pada
-`routes/web.php`; UI hanya menyembunyikan menu yang memang akan ditolak server.
+- Layar POS dan mencetak nota
+- Dashboard ringkas: penjualan hari ini dan sepuluh transaksi terakhir
+
+**Tidak bisa** membuka master produk, kategori, riwayat transaksi, maupun setting.
+
+### Aturan yang berlaku untuk semuanya
+
+- **Data tiap toko terpisah penuh.** Percobaan menyentuh milik toko lain ditolak,
+  termasuk lewat URL toko sendiri.
+- **Toko yang ditutup mengunci seluruh stafnya** — admin toko maupun kasir tidak
+  bisa masuk, dan sesi yang sedang berjalan langsung terputus. Owner tidak pernah
+  terkunci; dialah yang membukanya kembali.
+- **Pendaftaran mandiri tertutup.** Akun hanya lahir dari owner atau admin toko.
+
+---
+
+## Fitur dan menu
+
+### Milik owner aplikasi
+
+| Menu | Isi |
+|---|---|
+| **Dashboard** | Jumlah toko (aktif, nonaktif, terarsip) dan pengguna (owner, admin, kasir). Ditambah sorotan yang perlu ditindaklanjuti: toko yang belum punya pengguna, akun yang belum ditugaskan, toko nonaktif, dan toko terarsip |
+| **Daftar Toko** | Tambah toko, ubah identitas, buka/tutup, arsipkan, pulihkan, dan pintasan ke pengguna tiap toko |
+| **Pengguna** | Seluruh akun aplikasi beserta peran dan tokonya, dengan pencarian dan penghapusan akun |
+
+### Milik admin toko
+
+| Menu | Isi |
+|---|---|
+| **Dashboard** | Penjualan hari ini, jumlah transaksi, item terjual, rata-rata per transaksi. Empat grafik: penjualan 14 hari, transaksi per hari, produk terlaris, dan penjualan per jam. Ditambah transaksi terakhir dan daftar stok menipis |
+| **POS** | Layar kasir |
+| **Produk** | Master produk: harga, stok, stok minimal, satuan, barcode, gambar, status aktif. Pencarian dan penyaringan per kategori atau kondisi stok |
+| **Kategori** | Pengelompokan produk. Menghapus kategori tidak menghapus produknya |
+| **Transaksi** | Riwayat transaksi, detail tiap struk, dan cetak ulang nota |
+| **Pengguna Toko** | Membuatkan akun kasir untuk toko ini dan mencabut aksesnya |
+| **Setting Toko** | PPN, pembulatan, mata uang, isi struk, ukuran kertas, printer, dan jam buka |
+
+### Milik kasir
+
+| Menu | Isi |
+|---|---|
+| **Dashboard** | Penjualan hari ini, jumlah transaksi, item terjual, stok menipis, dan sepuluh transaksi terakhir |
+| **POS** | Layar kasir |
+
+### Layar POS
+
+Pencarian produk sekaligus kolom scan barcode, penyaringan per kategori, dan
+keranjang yang menghitung diskon, PPN, serta pembulatan. Pintasan **F2** untuk
+bayar dan **F4** untuk diskon transaksi.
+
+Harga yang disimpan **selalu dihitung ulang dari data produk di server** — angka
+yang dikirim dari layar kasir hanya untuk tampilan. Stok dipotong dalam satu
+transaksi database bersama penyimpanan notanya.
+
+### Cetak nota
+
+Nota tercetak otomatis begitu transaksi tersimpan, dan bisa dicetak ulang dari
+dialog struk maupun halaman Transaksi. Setiap toko punya setelan printernya
+sendiri di **Setting Toko → Printer**, mendukung tiga jenis koneksi:
+
+| Koneksi | Diisi dengan |
+|---|---|
+| CUPS | nama antrian printer (`lpstat -p`), antriannya harus bertipe raw |
+| Device | path perangkat, misalnya `/dev/usb/lp0` |
+| Bluetooth | alamat MAC printer (`bluetoothctl devices`) dan kanal RFCOMM |
+
+Tersedia tombol **Uji cetak** untuk memastikan koneksi dan lebar kertasnya benar.
+Kegagalan printer tidak pernah membatalkan transaksi — notanya tinggal dicetak
+ulang.
+
+Isi struk mengikuti setelan toko: header, footer bebas tulis yang boleh banyak
+baris, dan lebar kertas 58mm atau 80mm.
+
+### Peringatan stok menipis
+
+Tiap produk punya **stok minimal**. Begitu stoknya menyentuh angka itu, produknya
+ditandai di layar POS, tabel produk, dan dashboard. Saat kasir menambahkannya ke
+keranjang, muncul peringatan yang memakai sisa stok **setelah transaksi itu**.
+Isi 0 untuk mematikan peringatan pada sebuah produk.
+
+### Lain-lain
+
+- Tema **terang dan gelap**, bisa diatur di halaman profil
+- Pengguna yang hanya punya satu toko masuk langsung ke tokonya setelah login
+- Otentikasi dua faktor, ubah profil, dan ganti kata sandi
+
+---
 
 ## Menjalankan
 
@@ -78,9 +139,8 @@ php artisan storage:link   # sekali saja, untuk gambar produk
 composer run dev           # http://127.0.0.1:8000
 ```
 
-Database: MySQL. Aplikasi memakai `db_pos_v2`, test memakai `db_pos_v2_test`
-(lihat `phpunit.xml`). Mesin pengembangan ini tidak punya ekstensi `pdo_sqlite`,
-jadi SQLite bukan pilihan.
+Database memakai MySQL: `db_pos_v2` untuk aplikasi dan `db_pos_v2_test` untuk
+test (lihat `phpunit.xml`).
 
 ### Akun demo hasil seeder
 
@@ -93,193 +153,8 @@ Semua berkata sandi `password`:
 | `kasir.sdr@pos.test` | kasir Toko Sudirman |
 | `multirole@pos.test` | admin di Toko Sudirman, kasir di Toko Kelapa Dua |
 
-Seedernya idempoten — `php artisan db:seed` boleh dijalankan berkali-kali tanpa
-menggandakan data.
-
-## Cetak nota
-
-Setiap toko punya setelan printernya sendiri di **Setting Toko → Printer**.
-
-| Jenis koneksi | `printer_target` diisi | Catatan |
-|---|---|---|
-| `none` | — | Cetak dimatikan (bawaan toko baru) |
-| `cups` | nama antrian CUPS | Antriannya harus bertipe **raw** |
-| `file` | path device, mis. `/dev/usb/lp0` | Pengguna web server perlu izin tulis |
-| `bluetooth` | alamat MAC printer | Perlu pairing dulu; kanal RFCOMM disetel terpisah |
-
-Cara melihat nama antrian CUPS: `lpstat -p`. Cara melihat alamat printer
-Bluetooth yang sudah dipasangkan: `bluetoothctl devices`.
-
-**Kanal RFCOMM bukan selalu 1.** Printer RPP210A yang dipakai menguji fitur ini
-mendengarkan di kanal 5. Kalau uji cetak gagal dengan pesan timeout, coba kanal
-lain.
-
-Bluetooth memakai `scripts/bluetooth-print.py`, karena PHP tidak bisa membuka
-soket `AF_BLUETOOTH`. Tidak perlu root, tidak perlu `rfcomm bind`, dan tidak
-bergantung pada `/dev/rfcomm0` yang hilang setiap reboot. Backend `bluez-cups`
-sengaja tidak dipakai — ia gagal membuka koneksi ke printer SPP semacam ini.
-
-Tombol **Uji cetak** di Setting Toko mencetak nota uji lengkap dengan penggaris
-kolom: kalau angka terakhirnya mentok tepi kertas tanpa membungkus, lebar
-kertasnya sudah pas.
-
-Yang perlu diketahui: notifikasi "Nota dikirim ke printer" berarti byte
-diterima printer, **bukan** bukti kertas keluar — jalur ESC/POS tidak memberi
-umpan balik. Kegagalan printer tidak pernah membatalkan transaksi; transaksinya
-tetap tersimpan dan notanya bisa dicetak ulang dari dialog struk maupun halaman
-Riwayat Transaksi.
-
-### Isi nota
-
-Header memakai `receipt_header` toko, penutupnya `receipt_footer` yang boleh
-banyak baris dan ditengahkan otomatis. Baris `Powered by DeePOS` selalu
-ditambahkan paling bawah dan tidak bisa diubah toko.
-
-Emoji tidak bisa dicetak printer ESC/POS — ia keluar sebagai `?`. Pakai
-karakter ASCII untuk hiasan.
-
-## Dashboard toko
-
-Satu URL, isi berbeda menurut peran (lihat `DashboardController`):
-
-- **Admin toko** — empat kartu angka hari ini plus empat grafik: penjualan 14 hari
-  (garis), transaksi per hari (batang), produk terlaris (batang mendatar), dan
-  penjualan per jam hari ini. Ditambah lima transaksi terakhir dan kartu stok
-  menipis.
-- **Kasir** — penjualan hari ini, jumlah transaksi, item terjual, stok menipis,
-  dan tabel sepuluh transaksi terakhir toko itu.
-
-Grafiknya memakai komponen chart shadcn-vue di atas `@unovis/vue`. Semuanya
-berseri tunggal sehingga tidak butuh legenda — judul kartu yang menamai datanya.
-Warna diambil dari token `--chart-1` (nilai rupiah) dan `--chart-2` (hitungan),
-yang punya nilai terpisah untuk tema terang dan gelap.
-
-Grafik per jam memakai rentang jam buka toko, tapi **melebar otomatis** bila ada
-transaksi di luar jam itu — kalau tidak, jumlah batangnya tidak akan cocok
-dengan kartu "penjualan hari ini".
-
-## Dashboard owner
-
-Owner mendarat di `/overview` setelah login. Isinya jumlah toko (aktif,
-nonaktif, terarsip) dan pengguna (owner, admin toko, kasir), plus kartu sorotan
-yang perlu ditindaklanjuti — terutama **toko yang belum punya pengguna**, karena
-toko seperti itu tidak bisa dibuka siapa pun sampai owner membuatkan adminnya.
-
-Halaman ini **sengaja tidak memuat satu pun angka transaksi**, baik jumlah
-maupun omzet: owner tidak boleh melihat penjualan toko yang sudah terdaftar, dan
-dashboard bukan pintu belakang untuk itu.
-
-`/users` berisi seluruh akun beserta peran dan tokonya. Aksinya hanya menghapus
-akun — pengaturan peran tetap di layar Pengguna Toko masing-masing, supaya tidak
-ada dua tempat yang bisa berbeda. Menghapus akun **tidak menghapus riwayat
-transaksinya**: `transactions.user_id` memakai `nullOnDelete` dan nama kasir
-disimpan sebagai snapshot di struk.
-
-## Warna status
-
-Aplikasi ini memakai enam nada warna lembut yang sadar tema, didefinisikan
-sebagai token di `resources/css/app.css` (`--success`, `--info`, `--warning`,
-`--danger`, `--neutral`, `--ink`) dengan nilai terpisah untuk mode terang dan
-gelap:
-
-| Nada | Dipakai untuk |
-|---|---|
-| `success` | Produk aktif, toko buka |
-| `info` | Peran admin, metode pembayaran, nomor struk |
-| `warning` | Stok menipis, toko tutup, sorotan yang perlu ditindaklanjuti |
-| `danger` | Stok habis, tombol konfirmasi hapus |
-| `neutral` | Label sekunder: nama kasir, toko terarsip, peran kasir |
-| `ink` | Penekanan kuat. Ini satu-satunya nada SOLID — "hitam lembut" hanya akan jatuh jadi abu-abu dan bertabrakan dengan `neutral` |
-
-Tersedia sebagai varian di `ui/badge` dan `ui/button`, jadi cukup
-`<Badge variant="warning">` atau `<Button variant="danger">`.
-
-Warna primer aplikasi (`--primary`) adalah **biru**, bukan hitam: biru tidak
-bertabrakan makna dengan nada status, karena hijau sudah berarti berhasil,
-kuning peringatan, dan merah bahaya. Mode gelap memakai nada lebih terang dari
-biru yang sama, supaya tombol utama tetap berwarna di kedua tema.
-
-Seluruh pasangan teks/latar sudah diperiksa rasio kontrasnya di kedua tema —
-yang terendah 6,3:1, jauh di atas ambang 4,5:1. Kalau menambah nada baru,
-periksa kontrasnya, jangan dikira-kira.
-
-## Halaman masuk
-
-Layar autentikasi memakai `layouts/auth/AuthPhotoLayout.vue`: foto suasana kasir
-sebagai latar dengan formulir mengambang di atasnya. Latarnya
-`public/images/login-bg.jpg` — sudah dipanggang blur dan dikecilkan ke 1200 px,
-karena latar seburam itu tidak butuh resolusi; berkasnya cukup 34 KB. Sumber
-foto: [Unsplash](https://unsplash.com/photos/055d848f8bfd), lisensi bebas pakai
-termasuk untuk komersial.
-
-Nama aplikasi diambil dari `APP_NAME` di `.env` (kini `DeePOS`), jadi mengubahnya
-di sana ikut mengubah judul tab dan nama pengirim email.
-
-## Peringatan stok menipis
-
-Setiap produk punya **Stok minimal** (`products.min_stock`). Begitu stok menyentuh
-angka itu, produknya ditandai di tiga tempat: kartu produk di layar POS, tabel
-Master Produk (plus filter "Stok menipis"), dan kartu ringkasan di dashboard toko.
-
-Saat kasir menambahkan produk seperti itu ke keranjang, muncul notifikasi yang
-memakai sisa stok **setelah transaksi ini** — bukan angka di database — karena
-itu yang relevan baginya. Notifikasinya muncul sekali per produk per keranjang.
-
-Ini murni peringatan: kasir tetap bisa menyelesaikan transaksi. Penolakan
-sungguhan hanya terjadi kalau stok memang tidak cukup.
-
-Isi **0** untuk mematikan peringatan pada sebuah produk — itu juga nilai bawaan,
-sehingga produk lama tidak tiba-tiba jadi berisik.
-
-## Peta halaman
-
-| URL | Isi | Siapa |
-|---|---|---|
-| `/` | Tidak merender apa pun — tamu dialihkan ke layar masuk, yang sudah login ke tempat kerjanya | semua |
-| `/overview` | Dashboard owner: jumlah toko & pengguna, sorotan yang perlu ditindaklanjuti | owner |
-| `/users` | Seluruh akun aplikasi beserta peran dan tokonya | owner |
-| `/stores` | Daftar toko, tambah/ubah/arsip toko | semua (isinya difilter) |
-| `/stores?archived=1` | Toko terarsip, bisa dipulihkan | owner |
-| `/stores/{id}` | Dashboard toko — grafik untuk admin, ringkasan sif untuk kasir | admin toko, kasir |
-| `/stores/{id}/pos` | Layar kasir | admin toko, kasir |
-| `/stores/{id}/products` | Master produk (dengan gambar) | admin toko |
-| `/stores/{id}/categories` | Kategori | admin toko |
-| `/stores/{id}/transactions` | Riwayat transaksi, cetak ulang nota | admin toko |
-| `/stores/{id}/users` | Pengguna toko | owner, admin toko |
-| `/stores/{id}/settings` | Setelan operasional + printer | admin toko |
-
-## Id di URL
-
-Seluruh URL memakai **ULID**, bukan id berurut: `/stores/01JB.../products`.
-Primary key di database tetap integer — lima tabel merujuknya lewat foreign key
-dan angkanya tidak pernah keluar ke klien. Yang dipakai di URL adalah kolom
-`ulid` lewat `App\Concerns\HasUlidRouteKey` (`getRouteKeyName()`), tersedia di
-`stores`, `categories`, `products`, `transactions`, dan `users`.
-
-Konsekuensinya untuk siapa pun yang menyentuh kode ini:
-
-- Payload Inertia mengirim `id` **berisi ULID**, bukan primary key. Termasuk
-  `category_id` pada produk dan `product_id` pada keranjang POS.
-- Saat membuat URL di PHP, oper **modelnya**: `route('stores.pos', ['store' => $store])`.
-  Mengoper `$store->id` menghasilkan URL id berurut yang sudah tidak dikenali.
-- Aturan validasi yang mencocokkan id klien memakai kolom `ulid`
-  (`Rule::exists('products', 'ulid')`), lalu controller menerjemahkannya ke
-  foreign key integer sebelum menyimpan.
-
-## Catatan data
-
-- **Uang disimpan sebagai integer rupiah**, tanpa desimal. Rumus keranjang ada
-  di `App\Support\CartMath` (sisi server) dan `resources/js/lib/cart.ts` (sisi
-  klien); keduanya harus diubah bersamaan.
-- **Harga transaksi selalu dihitung ulang dari record produk.** Harga yang
-  dikirim klien saat checkout hanya echo tampilan dan diabaikan.
-- **Kolom snapshot** (`cashier_name`, `transaction_items.name`/`price`) menjaga
-  nota lama tidak berubah ketika produk diganti nama atau harganya naik.
-- **Menghapus toko = arsip (soft delete).** Seluruh foreign key `store_id`
-  memakai cascade, jadi penghapusan sungguhan akan ikut menghapus riwayat
-  transaksinya.
-- **Menghapus kategori tidak menghapus produknya** — produk hanya kehilangan
-  pengelompokan (`nullOnDelete`).
+Toko Serpong sengaja di-seed dalam keadaan tutup, jadi `admin.spg@pos.test` dan
+`kasir.spg@pos.test` memang tidak bisa login sampai tokonya dibuka.
 
 ## Verifikasi
 
@@ -289,3 +164,9 @@ php artisan test
 npm run check        # lint + type-check + unit test
 vendor/bin/pint --test
 ```
+
+## Dokumentasi lanjutan
+
+Catatan teknis, alasan tiap keputusan, dan jebakan yang sudah ditemukan ada di
+`docs/handoff/` — mulai dari `2026-08-29-sesi-fase-3-dan-ui.md` untuk keadaan
+terkini, lalu `2026-08-25-fase-2-handoff.md` untuk sejarah skema database.
