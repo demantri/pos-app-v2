@@ -283,9 +283,7 @@ function confirmDelete(): void {
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead class="w-14"><span class="sr-only">Gambar</span></TableHead>
                                 <TableHead>Nama</TableHead>
-                                <TableHead>SKU</TableHead>
                                 <TableHead>Kategori</TableHead>
                                 <TableHead class="text-right">Harga</TableHead>
                                 <TableHead class="text-right">Stok</TableHead>
@@ -295,33 +293,28 @@ function confirmDelete(): void {
                         </TableHeader>
                         <TableBody>
                             <TableRow v-if="paginated.length === 0">
-                                <TableCell colspan="8" class="text-muted-foreground py-8 text-center">
+                                <TableCell colspan="6" class="text-muted-foreground py-8 text-center">
                                     Tidak ada produk yang cocok.
                                 </TableCell>
                             </TableRow>
                             <TableRow v-for="product in paginated" :key="product.id">
-                                <TableCell>
-                                    <div class="bg-muted size-10 overflow-hidden rounded-md border">
-                                        <img
-                                            v-if="product.image_url"
-                                            :src="product.image_url"
-                                            :alt="product.name"
-                                            class="size-full object-cover"
-                                        />
-                                    </div>
+                                <!-- SKU ditumpuk di bawah nama, bukan kolom
+                                     sendiri: keduanya menjawab "produk apa
+                                     ini", jadi tidak perlu memakan dua kolom. -->
+                                <TableCell class="whitespace-normal">
+                                    <span class="font-medium">{{ product.name }}</span>
+                                    <span class="text-muted-foreground block text-xs">{{ product.sku }}</span>
                                 </TableCell>
-                                <TableCell class="font-medium">{{ product.name }}</TableCell>
-                                <TableCell class="text-muted-foreground">{{ product.sku }}</TableCell>
                                 <TableCell>{{ product.category }}</TableCell>
                                 <TableCell class="text-right">{{ formatRupiah(product.price) }}</TableCell>
                                 <TableCell class="text-right">
-                                    <div class="flex items-center justify-end gap-2">
+                                    <span>{{ product.stock }} {{ product.unit }}</span>
+                                    <span class="mt-1 block">
                                         <Badge v-if="product.stock <= 0" variant="destructive">Habis</Badge>
                                         <Badge v-else-if="isLowStock(product)" variant="secondary">
                                             Menipis
                                         </Badge>
-                                        <span>{{ product.stock }} {{ product.unit }}</span>
-                                    </div>
+                                    </span>
                                 </TableCell>
                                 <TableCell>
                                     <Badge :variant="product.is_active ? 'default' : 'secondary'">
