@@ -59,8 +59,11 @@ Route::middleware(['auth', 'verified', 'store.open'])->group(function () {
     // yang sama — /stores/1/products/99 milik toko 2 menjadi 404, bukan diam-diam
     // mengubah data toko lain.
     Route::middleware('resolve.store')->prefix('stores/{store}')->name('stores.')->scopeBindings()->group(function () {
-        // Layar POS: admin toko dan kasir toko.
+        // Layar POS dan dashboard toko: admin toko dan kasir toko. Isi
+        // dashboard-nya berbeda menurut peran (lihat DashboardController).
         Route::middleware('can:operatePos,store')->group(function () {
+            Route::get('/', DashboardController::class)->name('show');
+
             Route::get('pos', [PosController::class, 'index'])->name('pos');
             Route::post('pos/checkout', [PosController::class, 'checkout'])->name('pos.checkout');
 
@@ -80,8 +83,6 @@ Route::middleware(['auth', 'verified', 'store.open'])->group(function () {
 
         // Isi toko: hanya admin toko. Owner 403 — termasuk untuk transaksi.
         Route::middleware('can:manage,store')->group(function () {
-            Route::get('/', DashboardController::class)->name('show');
-
             Route::get('products', [ProductController::class, 'index'])->name('products.index');
             Route::post('products', [ProductController::class, 'store'])->name('products.store');
             Route::put('products/{product}', [ProductController::class, 'update'])->name('products.update');

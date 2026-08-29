@@ -136,6 +136,26 @@ ditambahkan paling bawah dan tidak bisa diubah toko.
 Emoji tidak bisa dicetak printer ESC/POS — ia keluar sebagai `?`. Pakai
 karakter ASCII untuk hiasan.
 
+## Dashboard toko
+
+Satu URL, isi berbeda menurut peran (lihat `DashboardController`):
+
+- **Admin toko** — empat kartu angka hari ini plus empat grafik: penjualan 14 hari
+  (garis), transaksi per hari (batang), produk terlaris (batang mendatar), dan
+  penjualan per jam hari ini. Ditambah lima transaksi terakhir dan kartu stok
+  menipis.
+- **Kasir** — penjualan hari ini, jumlah transaksi, item terjual, stok menipis,
+  dan tabel sepuluh transaksi terakhir toko itu.
+
+Grafiknya memakai komponen chart shadcn-vue di atas `@unovis/vue`. Semuanya
+berseri tunggal sehingga tidak butuh legenda — judul kartu yang menamai datanya.
+Warna diambil dari token `--chart-1` (nilai rupiah) dan `--chart-2` (hitungan),
+yang punya nilai terpisah untuk tema terang dan gelap.
+
+Grafik per jam memakai rentang jam buka toko, tapi **melebar otomatis** bila ada
+transaksi di luar jam itu — kalau tidak, jumlah batangnya tidak akan cocok
+dengan kartu "penjualan hari ini".
+
 ## Dashboard owner
 
 Owner mendarat di `/overview` setelah login. Isinya jumlah toko (aktif,
@@ -190,7 +210,7 @@ sehingga produk lama tidak tiba-tiba jadi berisik.
 | `/users` | Seluruh akun aplikasi beserta peran dan tokonya | owner |
 | `/stores` | Daftar toko, tambah/ubah/arsip toko | semua (isinya difilter) |
 | `/stores?archived=1` | Toko terarsip, bisa dipulihkan | owner |
-| `/stores/{id}` | Dashboard toko | admin toko |
+| `/stores/{id}` | Dashboard toko — grafik untuk admin, ringkasan sif untuk kasir | admin toko, kasir |
 | `/stores/{id}/pos` | Layar kasir | admin toko, kasir |
 | `/stores/{id}/products` | Master produk (dengan gambar) | admin toko |
 | `/stores/{id}/categories` | Kategori | admin toko |

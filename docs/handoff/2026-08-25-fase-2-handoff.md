@@ -666,6 +666,49 @@ owner, dan pengguna multi-toko tetap 200; kasir yang sedang membuka POS langsung
 layar masuk begitu owner menutup tokonya; pengguna multi-toko 403 di toko yang tutup tapi 200
 di toko yang buka.
 
+## 5l. Grafik dashboard, dashboard kasir, dan jarak tabel (2026-08-29)
+
+Tiga permintaan sekaligus: longgarkan jarak isi tabel, beri grafik pada dashboard admin, dan
+buatkan dashboard kasir (penjualan harian, transaksi, item terjual, stok menipis, plus sepuluh
+transaksi terakhir).
+
+**Jarak tabel** diperbaiki di SATU tempat — `ui/table/TableCell.vue` (`p-2` → `px-4 py-3`) dan
+`TableHead.vue` (`h-10 px-2` → `h-12 px-4`). Keenam tabel aplikasi memakai komponen yang sama,
+jadi tidak ada halaman yang perlu disentuh satu per satu.
+
+**Dashboard kasir** mengubah aturan fase 3 "kasir hanya layar POS": rute `stores/{store}`
+dipindah dari grup `can:manage` ke `can:operatePos`, dan `DashboardController` memilih isi
+menurut peran. Owner TETAP 403 di sana (diverifikasi), jadi larangan owner melihat transaksi
+toko tidak ikut longgar.
+
+**Grafik** memakai komponen chart shadcn-vue di atas `@unovis/vue` (dipasang lewat
+`shadcn-vue add chart`; CLI-nya TIDAK ikut memasang @unovis, jadi harus `npm install` sendiri).
+Empat grafik, semuanya berseri tunggal sehingga tidak butuh legenda.
+
+Yang tidak terlihat dari kode tapi memakan waktu:
+
+1. **`ChartStyle.vue` bawaan shadcn membuat `types:check` merah.** `defineProps<{ id?:
+   HTMLAttributes["id"] }>()` terbaca kosong oleh vue-tsc sehingga `:id` di `ChartContainer`
+   dianggap prop tak dikenal — kelas masalah yang sama dengan Button.vue di fase 1. Diperbaiki
+   dengan deklarasi props runtime.
+2. **Grafik per jam mula-mula menampilkan total 0** padahal kartu "penjualan hari ini" berisi
+   Rp 499.400: transaksi di luar jam buka toko (dini hari) jatuh di luar rentang. Rentangnya
+   kini melebar mengikuti data.
+3. **Label sumbu bertabrakan pada percobaan pertama** — 14 label tanggal berdesakan di kartu
+   sempit, dan nama produk membungkus saling menimpa. Batang tegak kini maksimal 7 tanda,
+   batang mendatar diberi margin kiri 150px, label dipangkas 20 karakter, dan tingginya
+   dinaikkan ke 360px. Ketahuan dari melihat hasil render, bukan dari type-check.
+4. **Token `--chart-2` mode gelap diubah** dari `hsl(160 60% 45%)` ke `40%`: validator palet
+   menolak nilai bawaan karena berada di luar pita terang (L 0.699 vs pita 0.48–0.67). Nilai
+   baru lolos seluruh pemeriksaan.
+
+Diverifikasi dengan melihat hasil render pada mode terang dan gelap, plus matriks akses:
+owner 403 di dashboard toko, kasir 200 di dashboard tapi tetap 403 di halaman transaksi.
+
+**Catatan lingkungan:** user mengganti sendiri email owner dari `demo@pos.test` menjadi
+`owner@pos.test` lewat aplikasi. Seeder tetap membuat `demo@pos.test`; database dev-lah yang
+berbeda.
+
 ## 6. Catatan T4 (jalur baca) — sudah dikerjakan, disimpan sebagai rujukan
 
 - Ganti pemanggilan `DemoData::*` di controller dengan query Eloquent. `products_count` /

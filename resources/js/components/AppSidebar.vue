@@ -64,7 +64,9 @@ const mainNavItems = computed<NavItem[]>(() => {
     // menu isi toko — sejak fase 3 ia hanya boleh mengurus penggunanya.
     if (! permissions.can_manage_current_store) {
         return [
-            ...(permissions.can_operate_current_pos ? [pos] : []),
+            ...(permissions.can_operate_current_pos
+                ? [{ title: 'Dashboard', href: storePath(store.id), icon: LayoutGrid }, pos]
+                : []),
             ...(permissions.can_manage_current_store_users ? [users] : []),
             ...(showStoreList.value ? [storeList] : []),
         ];

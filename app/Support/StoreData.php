@@ -11,6 +11,7 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Sumber data halaman toko, dibaca dari database.
@@ -214,6 +215,25 @@ class StoreData
     }
 
     /**
+     * Dashboard kasir: angka yang sama dengan dashboard admin, tanpa grafik,
+     * dengan sepuluh transaksi terakhir.
+     *
+     * @return array<string, mixed>
+     */
+    public static function cashierDashboard(Store $store): array
+    {
+        return [
+            ...self::todayFigures($store),
+            'low_stock_count' => self::lowStockQuery($store)->count(),
+            'recent_transactions' => self::historyQuery($store)
+                ->limit(10)
+                ->get()
+                ->map(static fn (Transaction $transaction): array => self::transaction($transaction))
+                ->all(),
+        ];
+    }
+
+    /**
      * Angka kartu dashboard.
      *
      * `*_today` benar-benar berarti hari ini — jadi kartu bernilai nol
@@ -225,32 +245,15 @@ class StoreData
      */
     public static function dashboard(Store $store): array
     {
-        /** @var Collection<int, Transaction> $today */
-        $today = $store->transactions()
-            ->whereDate('created_at', today())
-            ->get(['id', 'total']);
-
-        $count = $today->count();
-        $total = (int) $today->sum('total');
-
-        $itemsSold = (int) TransactionItem::query()
-            ->whereIn('transaction_id', $today->pluck('id'))
-            ->sum('qty');
-
-        // Produk yang stoknya sudah menyentuh ambang peringatan tokonya.
-        // min_stock 0 berarti tidak diawasi, jadi dikecualikan — kalau tidak,
-        // semua produk habis ikut terhitung menipis.
-        $lowStockQuery = $store->products()
-            ->where('is_active', true)
-            ->where('min_stock', '>', 0)
-            ->whereColumn('stock', '<=', 'min_stock')
-            ->orderBy('stock');
+        $lowStockQuery = self::lowStockQuery($store);
 
         return [
-            'sales_today' => $total,
-            'transactions_today' => $count,
-            'items_sold' => $itemsSold,
-            'average_per_transaction' => $count > 0 ? (int) round($total / $count) : 0,
+            ...self::todayFigures($store),
+            'charts' => [
+                'daily' => self::dailySeries($store),
+                'top_products' => self::topProducts($store),
+                'hourly' => self::hourlySeries($store),
+            ],
             'low_stock_count' => (clone $lowStockQuery)->count(),
             'low_stock' => $lowStockQuery
                 ->limit(self::LOW_STOCK_LIMIT)
@@ -269,6 +272,154 @@ class StoreData
                 ->map(static fn (Transaction $transaction): array => self::transaction($transaction))
                 ->all(),
         ];
+    }
+
+    /**
+     * Angka hari ini — dipakai dashboard admin maupun kasir.
+     *
+     * @return array<string, mixed>
+     */
+    private static function todayFigures(Store $store): array
+    {
+        /** @var Collection<int, Transaction> $today */
+        $today = $store->transactions()
+            ->whereDate('created_at', today())
+            ->get(['id', 'total']);
+
+        $count = $today->count();
+        $total = (int) $today->sum('total');
+
+        return [
+            'sales_today' => $total,
+            'transactions_today' => $count,
+            'items_sold' => (int) TransactionItem::query()
+                ->whereIn('transaction_id', $today->pluck('id'))
+                ->sum('qty'),
+            'average_per_transaction' => $count > 0 ? (int) round($total / $count) : 0,
+        ];
+    }
+
+    /**
+     * Produk yang stoknya sudah menyentuh ambang peringatan tokonya.
+     *
+     * min_stock 0 berarti tidak diawasi, jadi dikecualikan — kalau tidak,
+     * semua produk habis ikut terhitung menipis.
+     *
+     * @return HasMany<Product, Store>
+     */
+    private static function lowStockQuery(Store $store)
+    {
+        return $store->products()
+            ->where('is_active', true)
+            ->where('min_stock', '>', 0)
+            ->whereColumn('stock', '<=', 'min_stock')
+            ->orderBy('stock');
+    }
+
+    /**
+     * Omzet dan jumlah transaksi per hari selama dua minggu terakhir.
+     *
+     * Hari tanpa transaksi tetap diisi nol — kalau dilewati, garisnya akan
+     * melompati tanggal dan memberi kesan tren yang keliru.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private static function dailySeries(Store $store, int $days = 14): array
+    {
+        $start = today()->subDays($days - 1);
+
+        $rows = $store->transactions()
+            ->where('created_at', '>=', $start)
+            ->selectRaw('DATE(created_at) as day, SUM(total) as total, COUNT(*) as jumlah')
+            ->groupBy('day')
+            ->get()
+            ->keyBy('day');
+
+        $series = [];
+
+        for ($i = 0; $i < $days; $i++) {
+            $date = $start->addDays($i);
+            $row = $rows->get($date->toDateString());
+
+            $series[] = [
+                'label' => $date->format('d/m'),
+                'total' => (int) ($row->total ?? 0),
+                'count' => (int) ($row->jumlah ?? 0),
+            ];
+        }
+
+        return $series;
+    }
+
+    /**
+     * Sepuluh produk dengan item terjual terbanyak sebulan terakhir.
+     *
+     * Dikelompokkan berdasarkan NAMA snapshot di item transaksi, bukan
+     * product_id: produk yang sudah dihapus tetap terhitung penjualannya.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private static function topProducts(Store $store, int $limit = 10, int $days = 30): array
+    {
+        return TransactionItem::query()
+            ->join('transactions', 'transactions.id', '=', 'transaction_items.transaction_id')
+            ->where('transactions.store_id', $store->id)
+            ->where('transactions.created_at', '>=', today()->subDays($days - 1))
+            ->groupBy('transaction_items.name')
+            ->orderByDesc('qty')
+            ->limit($limit)
+            ->get([
+                DB::raw('transaction_items.name as name'),
+                DB::raw('SUM(transaction_items.qty) as qty'),
+            ])
+            ->map(static fn ($row): array => [
+                'label' => $row->name,
+                'qty' => (int) $row->qty,
+            ])
+            ->all();
+    }
+
+    /**
+     * Omzet hari ini per jam, sepanjang jam buka toko.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private static function hourlySeries(Store $store): array
+    {
+        $rows = $store->transactions()
+            ->whereDate('created_at', today())
+            ->selectRaw('HOUR(created_at) as jam, SUM(total) as total')
+            ->groupBy('jam')
+            ->pluck('total', 'jam');
+
+        $open = (int) mb_substr($store->open_time, 0, 2);
+        $close = (int) mb_substr($store->close_time, 0, 2);
+
+        // Jam tutup yang lebih awal dari jam buka (atau setelan kosong) tidak
+        // bisa dijadikan rentang; jatuh kembali ke sehari penuh.
+        if ($close <= $open) {
+            $open = 0;
+            $close = 23;
+        }
+
+        // Penjualan di luar jam buka tetap harus muncul: kasir yang melayani
+        // lewat jam tutup bukan alasan angkanya hilang dari grafik. Tanpa ini,
+        // jumlah batangnya tidak akan cocok dengan kartu "penjualan hari ini".
+        if ($rows->isNotEmpty()) {
+            $open = min($open, (int) $rows->keys()->min());
+            $close = max($close, (int) $rows->keys()->max());
+        }
+
+        $series = [];
+
+        for ($hour = $open; $hour <= $close; $hour++) {
+            $series[] = [
+                'label' => sprintf('%02d', $hour),
+                'total' => (int) ($rows[$hour] ?? 0),
+            ];
+        }
+
+        return $series;
     }
 
     /**

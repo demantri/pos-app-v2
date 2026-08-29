@@ -138,6 +138,10 @@ export type LowStockProduct = {
     unit: string;
 };
 
+export type DailyPoint = { label: string; total: number; count: number };
+export type QtyPoint = { label: string; qty: number };
+export type HourPoint = { label: string; total: number };
+
 export type DashboardStats = {
     sales_today: number;
     transactions_today: number;
@@ -145,6 +149,24 @@ export type DashboardStats = {
     average_per_transaction: number;
     low_stock_count: number;
     low_stock: LowStockProduct[];
+    recent_transactions: Transaction[];
+    charts: {
+        daily: DailyPoint[];
+        top_products: QtyPoint[];
+        hourly: HourPoint[];
+    };
+};
+
+/**
+ * Dashboard kasir: angka hari ini yang sama dengan milik admin, tanpa grafik,
+ * dengan sepuluh transaksi terakhir.
+ */
+export type CashierDashboardStats = {
+    sales_today: number;
+    transactions_today: number;
+    items_sold: number;
+    average_per_transaction: number;
+    low_stock_count: number;
     recent_transactions: Transaction[];
 };
 

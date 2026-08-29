@@ -2,6 +2,8 @@
 import { Head, Link, usePage } from '@inertiajs/vue3';
 import { Banknote, PackageCheck, Receipt, TrendingUp, TriangleAlert } from 'lucide-vue-next';
 import { computed } from 'vue';
+import BarChart from '@/components/charts/BarChart.vue';
+import LineChart from '@/components/charts/LineChart.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -28,6 +30,38 @@ const breadcrumbs = computed<BreadcrumbItem[]>(() => [
     { title: 'Daftar Toko', href: '/stores' },
     { title: currentStore.value.name, href: storePath(currentStore.value.id) },
 ]);
+
+// Grafik berseri tunggal semua, jadi tidak ada legenda — judul kartunya yang
+// menamai datanya. Warna uang memakai --chart-1, warna hitungan --chart-2,
+// supaya "rupiah" dan "banyaknya" konsisten antar grafik.
+const salesSeries = computed(() =>
+    props.stats.charts.daily.map((point) => ({ label: point.label, value: point.total })),
+);
+
+const countSeries = computed(() =>
+    props.stats.charts.daily.map((point) => ({ label: point.label, value: point.count })),
+);
+
+const topProducts = computed(() =>
+    props.stats.charts.top_products.map((point) => ({ label: point.label, value: point.qty })),
+);
+
+const hourlySeries = computed(() =>
+    props.stats.charts.hourly.map((point) => ({ label: point.label, value: point.total })),
+);
+
+/** Sumbu rupiah dipendekkan supaya labelnya tidak saling menabrak. */
+function shortRupiah(value: number): string {
+    if (value >= 1_000_000) {
+        return `${Math.round(value / 100_000) / 10} jt`;
+    }
+
+    if (value >= 1_000) {
+        return `${Math.round(value / 1_000)} rb`;
+    }
+
+    return String(value);
+}
 
 const cards = computed(() => [
     {
@@ -72,6 +106,58 @@ const cards = computed(() => [
                         </CardDescription>
                         <CardTitle class="text-2xl">{{ card.value }}</CardTitle>
                     </CardHeader>
+                </Card>
+            </div>
+
+            <div class="grid gap-4 lg:grid-cols-2">
+                <Card>
+                    <CardHeader>
+                        <CardTitle class="text-base">Penjualan 14 hari terakhir</CardTitle>
+                        <CardDescription>Omzet harian toko ini.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <LineChart :data="salesSeries" :format="shortRupiah" color="var(--chart-1)" />
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardHeader>
+                        <CardTitle class="text-base">Transaksi per hari</CardTitle>
+                        <CardDescription>Banyaknya struk selama 14 hari terakhir.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <BarChart :data="countSeries" :format="(v: number) => String(v)" color="var(--chart-2)" />
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardHeader>
+                        <CardTitle class="text-base">Produk terlaris</CardTitle>
+                        <CardDescription>Item terjual terbanyak sebulan terakhir.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <p v-if="topProducts.length === 0" class="text-muted-foreground py-8 text-center text-sm">
+                            Belum ada penjualan sebulan terakhir.
+                        </p>
+                        <BarChart
+                            v-else
+                            :data="topProducts"
+                            :format="(v: number) => String(v)"
+                            color="var(--chart-2)"
+                            horizontal
+                            :height="360"
+                        />
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardHeader>
+                        <CardTitle class="text-base">Penjualan per jam hari ini</CardTitle>
+                        <CardDescription>Jam berapa toko ini ramai.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <BarChart :data="hourlySeries" :format="shortRupiah" color="var(--chart-1)" />
+                    </CardContent>
                 </Card>
             </div>
 
