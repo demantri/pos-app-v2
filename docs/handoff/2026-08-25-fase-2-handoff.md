@@ -532,6 +532,50 @@ Yang ikut berubah dan mudah terlewat:
 | Ubah / arsipkan / pulihkan toko lewat URL ULID | 303 semua, keadaan akhir benar |
 | Klik menu Produk → Kategori → Transaksi → Pengguna → Setting di browser | seluruhnya `/stores/01M15.../...` |
 
+## 5i. Halaman masuk + registrasi ditutup (2026-08-29)
+
+User minta tampilan login yang lebih menarik, dengan arahan sendiri: *"cari background kasir
+sedang input saja dengan rada blurry"*.
+
+- `layouts/auth/AuthPhotoLayout.vue` (baru) menggantikan `AuthSimpleLayout` sebagai isi
+  `AuthLayout`, jadi SELURUH halaman auth ikut berubah, bukan hanya login.
+- Latar `public/images/login-bg.jpg`: foto kasir melayani pelanggan di terminal POS, dari
+  Unsplash (`photo-1556741568-055d848f8bfd`, lisensi bebas pakai termasuk komersial).
+  Diproses dengan Pillow — dikecilkan ke 1200 px lalu di-blur radius 6 dan disimpan q62,
+  hasilnya 34 KB. Blur dipanggang ke berkasnya supaya resolusi rendah tidak kelihatan; CSS
+  hanya menambah `blur-[2px]` dan `scale-105` agar tepinya tidak memudar.
+- Salinan halaman login diterjemahkan ke bahasa Indonesia. Halaman auth LAIN (lupa sandi,
+  reset, verifikasi email, 2FA) masih berbahasa Inggris — di luar permintaan, belum disentuh.
+
+### Registrasi mandiri ditutup
+
+`Features::registration()` ternyata masih AKTIF di `config/fortify.php` — `/register` hidup dan
+siapa pun bisa membuat akun, bertentangan dengan model peran yang sudah disetujui dan bahkan
+sudah tertulis di README. Keputusan user: tutup.
+
+Yang ikut terbawa dan mudah terlewat:
+
+1. `RegistrationTest` aman — ia memakai `skipUnlessFortifyFeature`, jadi otomatis ter-skip
+   (2 test skipped, bukan gagal).
+2. **Halaman depan menampilkan tombol "Register" yang menunjuk rute mati.** `Welcome.vue`
+   mendeklarasikan `canRegister` dengan default `true`, sedangkan rute `home` adalah
+   `Route::inertia` yang tidak mengirim prop apa pun — jadi tombolnya selalu tampil. Prop dan
+   tombolnya dibuang.
+3. **`resources/js/pages/auth/Register.vue` DIHAPUS.** Wayfinder meregenerasi `@/routes` dari
+   daftar rute yang hidup, sehingga `@/routes/register` lenyap dan berkas itu tidak bisa
+   dikompilasi lagi — build gagal keras, bukan diam-diam. Kalau registrasi dinyalakan lagi,
+   halaman ini harus dibuat ulang.
+
+`APP_NAME` di `.env` dan `.env.example` diubah dari `Laravel` menjadi `DeePOS` (dipakai judul
+tab, nama pengirim email, dan judul di layar masuk). Ini satu-satunya baris `.env` yang
+disentuh; setelan database tidak.
+
+**Diverifikasi di browser:** tampilan terang dan gelap, plus login sungguhan sebagai
+`kasir.sdr` yang mendarat di `/stores/{ULID}/pos`.
+
+**Belum disentuh:** halaman depan (`/`) masih memakai tampilan bawaan starter kit lengkap
+dengan gambar promosi Laravel.
+
 ## 6. Catatan T4 (jalur baca) — sudah dikerjakan, disimpan sebagai rujukan
 
 - Ganti pemanggilan `DemoData::*` di controller dengan query Eloquent. `products_count` /

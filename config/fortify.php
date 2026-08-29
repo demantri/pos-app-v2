@@ -144,7 +144,10 @@ return [
     */
 
     'features' => [
-        Features::registration(),
+        // Registrasi mandiri SENGAJA dimatikan: akun hanya lahir dari owner
+        // aplikasi atau admin toko lewat layar Pengguna Toko. Menyalakannya
+        // kembali berarti siapa pun bisa membuat akun sendiri.
+        // Features::registration(),
         Features::resetPasswords(),
         Features::emailVerification(),
         Features::twoFactorAuthentication([

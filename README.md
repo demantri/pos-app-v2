@@ -36,7 +36,10 @@ kasir ke layar POS, admin toko ke dashboard. Pemilih toko dan menu Daftar Toko
 disembunyikan baginya, karena keduanya cuma jalan memutar ke tempat yang sama.
 
 Seorang pengguna bisa menjadi admin di satu toko sekaligus kasir di toko lain.
-Pendaftaran mandiri tertutup: akun hanya lahir dari owner atau admin toko.
+Pendaftaran mandiri **ditutup di tingkat konfigurasi**: `Features::registration()`
+dimatikan di `config/fortify.php`, rute `/register` tidak ada, dan halaman
+`auth/Register.vue` sudah dihapus. Akun hanya lahir dari owner atau admin toko.
+Menyalakannya kembali berarti mengembalikan ketiganya.
 
 Data tiap toko terpisah penuh — transaksi, master data, dan laporannya hanya
 bisa dibuka pengguna toko itu sendiri. Percobaan menyentuh milik toko lain
@@ -121,6 +124,18 @@ ditambahkan paling bawah dan tidak bisa diubah toko.
 
 Emoji tidak bisa dicetak printer ESC/POS — ia keluar sebagai `?`. Pakai
 karakter ASCII untuk hiasan.
+
+## Halaman masuk
+
+Layar autentikasi memakai `layouts/auth/AuthPhotoLayout.vue`: foto suasana kasir
+sebagai latar dengan formulir mengambang di atasnya. Latarnya
+`public/images/login-bg.jpg` — sudah dipanggang blur dan dikecilkan ke 1200 px,
+karena latar seburam itu tidak butuh resolusi; berkasnya cukup 34 KB. Sumber
+foto: [Unsplash](https://unsplash.com/photos/055d848f8bfd), lisensi bebas pakai
+termasuk untuk komersial.
+
+Nama aplikasi diambil dari `APP_NAME` di `.env` (kini `DeePOS`), jadi mengubahnya
+di sana ikut mengubah judul tab dan nama pengirim email.
 
 ## Peringatan stok menipis
 
