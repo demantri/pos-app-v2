@@ -4,11 +4,15 @@ namespace App\Providers;
 
 use App\Actions\Fortify\CreateNewUser;
 use App\Actions\Fortify\ResetUserPassword;
+use App\Http\Middleware\EnsureStoreIsOpen;
+use App\Models\User;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
 use Laravel\Fortify\Fortify;
@@ -29,6 +33,7 @@ class FortifyServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->configureActions();
+        $this->configureAuthentication();
         $this->configureViews();
         $this->configureRateLimiting();
     }
@@ -43,13 +48,38 @@ class FortifyServiceProvider extends ServiceProvider
     }
 
     /**
+     * Menolak login pengguna yang seluruh tokonya sudah ditutup.
+     *
+     * Kredensialnya diperiksa lebih dulu supaya pesan "toko ditutup" tidak
+     * bocor ke orang yang cuma menebak-nebak email — ia hanya muncul setelah
+     * kata sandinya benar.
+     */
+    private function configureAuthentication(): void
+    {
+        Fortify::authenticateUsing(function (Request $request): ?User {
+            $user = User::where('email', $request->email)->first();
+
+            if ($user === null || ! Hash::check($request->password, $user->password)) {
+                return null;
+            }
+
+            if ($user->isLockedOutByStoreStatus()) {
+                throw ValidationException::withMessages([
+                    'email' => EnsureStoreIsOpen::MESSAGE,
+                ]);
+            }
+
+            return $user;
+        });
+    }
+
+    /**
      * Configure Fortify views.
      */
     private function configureViews(): void
     {
         Fortify::loginView(fn (Request $request) => Inertia::render('auth/Login', [
             'canResetPassword' => Features::enabled(Features::resetPasswords()),
-            'canRegister' => Features::enabled(Features::registration()),
             'status' => $request->session()->get('status'),
         ]));
 
@@ -65,8 +95,6 @@ class FortifyServiceProvider extends ServiceProvider
         Fortify::verifyEmailView(fn (Request $request) => Inertia::render('auth/VerifyEmail', [
             'status' => $request->session()->get('status'),
         ]));
-
-        Fortify::registerView(fn () => Inertia::render('auth/Register'));
 
         Fortify::twoFactorChallengeView(fn () => Inertia::render('auth/TwoFactorChallenge'));
 

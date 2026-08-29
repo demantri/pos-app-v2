@@ -159,7 +159,9 @@ const cards = computed(() => [
                                 {{ highlights.inactive_stores.count }}
                             </Badge>
                         </CardTitle>
-                        <CardDescription>Ditutup sementara; kasirnya tetap bisa masuk.</CardDescription>
+                        <CardDescription>
+                            Stafnya tidak bisa masuk sampai tokonya diaktifkan lagi.
+                        </CardDescription>
                     </CardHeader>
                     <CardContent class="space-y-1 text-sm">
                         <p v-if="highlights.inactive_stores.count === 0" class="text-muted-foreground">

@@ -625,6 +625,47 @@ owner mendarat di `/overview` setelah login sedangkan admin/kasir tetap ke tokon
 toko milik owner mendarat di layar Pengguna Toko; penghapusan akun sendiri ditolak dengan pesan
 yang benar dan jumlah akun tidak berubah.
 
+## 5k. Toko nonaktif mengunci stafnya (2026-08-29)
+
+Permintaan user: *"seharusnya jika ada toko yang sudah di inactive, user nya tidak bisa login
+kembali"*. Ini MENGUBAH arti `is_active` yang sebelumnya cuma penanda — kartu dashboard bahkan
+berbunyi "Ditutup sementara; kasirnya tetap bisa masuk", dan teks itu ikut diperbaiki.
+
+Keputusan user: yang terkunci **admin toko DAN kasir** (toko tutup berarti tutup untuk seluruh
+staf — lagipula hanya owner yang bisa membukanya lagi), dan penutupan berlaku **seketika**,
+bukan menunggu login berikutnya.
+
+Yang saya putuskan sendiri dan sudah disampaikan ke user:
+
+- Orang yang masih punya toko aktif lain TETAP bisa login; hanya toko yang tutup itu yang
+  tertutup baginya.
+- Toko terarsip diperlakukan sama seperti nonaktif — `stores()->withTrashed()` dipakai saat
+  menghitung penugasan, supaya orang yang tokonya diarsipkan ikut terkunci alih-alih dianggap
+  "belum ditugaskan".
+- Akun yang BELUM ditugaskan ke toko mana pun tidak ikut terkunci: aturan ini soal toko yang
+  ditutup, bukan akun baru yang menunggu penugasan.
+- Owner tidak pernah terkunci, dan ia tetap bisa membuka layar Pengguna Toko di toko nonaktif
+  (dashboard tokonya tetap 403, sesuai fase 3).
+
+Tiga lapis penegakan:
+
+1. `User::canAccessStore()` dan `canManageStore()` kini mensyaratkan `is_active`, jadi seluruh
+   halaman dalam toko ikut tertutup.
+2. `Fortify::authenticateUsing()` menolak login dengan pesan yang muncul di bawah kolom email.
+   Kredensial diperiksa LEBIH DULU supaya pesan "toko ditutup" tidak bocor ke orang yang cuma
+   menebak-nebak email.
+3. Middleware `store.open` (`EnsureStoreIsOpen`) memutus sesi yang sedang berjalan. Tanpa ini,
+   kasir yang sudah membuka POS bisa terus berjualan sampai ia keluar sendiri.
+
+**Diberi test** (`tests/Feature/Auth/InactiveStoreLockoutTest.php`, 5 test) meski arahan fase 2
+melarang test baru — ini aturan autentikasi, dan regresinya tidak akan terlihat sampai ada yang
+berjualan di toko yang sudah ditutup.
+
+Diverifikasi runtime: staf toko nonaktif gagal login 422 dengan pesannya; staf toko aktif,
+owner, dan pengguna multi-toko tetap 200; kasir yang sedang membuka POS langsung dilempar ke
+layar masuk begitu owner menutup tokonya; pengguna multi-toko 403 di toko yang tutup tapi 200
+di toko yang buka.
+
 ## 6. Catatan T4 (jalur baca) — sudah dikerjakan, disimpan sebagai rujukan
 
 - Ganti pemanggilan `DemoData::*` di controller dengan query Eloquent. `products_count` /

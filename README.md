@@ -31,6 +31,17 @@ Owner **tidak bisa melihat transaksi** toko yang sudah terdaftar. Satu-satunya
 pintunya ke dalam sebuah toko adalah layar Pengguna Toko — itu yang membuat
 toko baru bisa mendapat admin pertamanya.
 
+**Toko nonaktif mengunci stafnya keluar.** Begitu owner menutup sebuah toko,
+admin dan kasirnya tidak bisa login lagi, dan sesi yang sedang terbuka langsung
+terputus pada permintaan berikutnya. Orang yang masih punya toko aktif lain
+tetap bisa masuk — hanya toko yang tutup itu yang tertutup baginya. Toko
+terarsip diperlakukan sama. Owner tidak pernah terkunci; dialah yang membuka
+kembali tokonya, dan ia tetap bisa membuka layar Pengguna Toko di sana.
+
+Catatan data demo: Toko Serpong di-seed dalam keadaan nonaktif, jadi
+`admin.spg@pos.test` dan `kasir.spg@pos.test` memang tidak bisa login sampai
+tokonya dibuka.
+
 **Pengguna yang hanya punya satu toko masuk langsung ke tokonya** setelah login —
 kasir ke layar POS, admin toko ke dashboard. Pemilih toko dan menu Daftar Toko
 disembunyikan baginya, karena keduanya cuma jalan memutar ke tempat yang sama.

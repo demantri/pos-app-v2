@@ -219,7 +219,12 @@ function restore(store: Store): void {
                                 :model-value="store.is_active"
                                 @update:model-value="toggleActive(store)"
                             />
-                            <Label :for="`store-active-${store.id}`">Toko buka</Label>
+                            <Label :for="`store-active-${store.id}`">
+                                Toko buka
+                                <span class="text-muted-foreground block text-xs font-normal">
+                                    Ditutup berarti stafnya tidak bisa masuk
+                                </span>
+                            </Label>
                         </div>
                     </CardContent>
 

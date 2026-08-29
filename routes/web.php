@@ -22,7 +22,9 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', fn (Request $request) => redirect()->route($request->user() ? 'dashboard' : 'login'))
     ->name('home');
 
-Route::middleware(['auth', 'verified'])->group(function () {
+// store.open: begitu owner menonaktifkan toko, stafnya langsung terputus —
+// tidak menunggu sampai ia logout sendiri.
+Route::middleware(['auth', 'verified', 'store.open'])->group(function () {
     Route::get('dashboard', EntryPointController::class)->name('dashboard');
 
     // Dashboard owner aplikasi + daftar seluruh akun. Sengaja di luar scope

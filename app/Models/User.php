@@ -119,25 +119,29 @@ class User extends Authenticatable
     }
 
     /**
-     * Anggota toko ini — admin atau kasirnya.
+     * Anggota toko ini — admin atau kasirnya — DAN tokonya sedang buka.
      *
      * Owner SENGAJA tidak termasuk: sejak fase 3 ia tidak boleh melihat isi
      * toko sama sekali (transaksi, produk, POS, setting). Wewenangnya berhenti
      * di tingkat toko: menambah, mengubah identitas, mengatur status, dan
      * mengarsipkan.
+     *
+     * Toko nonaktif menutup pintu untuk SELURUH stafnya, bukan hanya kasir:
+     * toko tutup berarti tutup, dan hanya owner yang bisa membukanya lagi.
      */
     public function canAccessStore(Store $store): bool
     {
-        return $this->roleIn($store) !== null;
+        return $store->is_active && $this->roleIn($store) !== null;
     }
 
     /**
      * Boleh mengelola isi toko: produk, kategori, transaksi, dan setting.
-     * Hanya admin toko — bukan kasir, dan bukan owner.
+     * Hanya admin toko — bukan kasir, dan bukan owner — dan hanya selama
+     * tokonya aktif.
      */
     public function canManageStore(Store $store): bool
     {
-        return $this->isAdminOf($store);
+        return $store->is_active && $this->isAdminOf($store);
     }
 
     /**
@@ -145,11 +149,37 @@ class User extends Authenticatable
      *
      * Owner ikut boleh — dan ini SATU-SATUNYA pintunya ke dalam scope toko.
      * Tanpa itu toko yang baru dibuat tidak akan pernah punya pengguna, karena
-     * ia belum punya admin yang bisa membuatkannya.
+     * ia belum punya admin yang bisa membuatkannya. Owner juga tetap bisa
+     * masuk ke toko nonaktif; stafnya tidak.
      */
     public function canManageStoreUsers(Store $store): bool
     {
-        return $this->isOwner() || $this->isAdminOf($store);
+        return $this->isOwner() || ($store->is_active && $this->isAdminOf($store));
+    }
+
+    /**
+     * Seluruh tokonya sedang tutup (nonaktif) atau terarsip, sehingga tidak
+     * ada satu pun tempat yang bisa ia buka.
+     *
+     * Akun yang BELUM ditugaskan ke toko mana pun sengaja tidak termasuk —
+     * aturan ini soal toko yang ditutup, bukan soal akun baru yang menunggu
+     * penugasan. Owner tidak pernah terkunci: dialah yang mengaktifkan
+     * kembali tokonya.
+     */
+    public function isLockedOutByStoreStatus(): bool
+    {
+        if ($this->isOwner()) {
+            return false;
+        }
+
+        // withTrashed(): toko terarsip tetap dihitung sebagai penugasan,
+        // supaya orang yang tokonya diarsipkan ikut terkunci alih-alih
+        // dianggap "belum ditugaskan".
+        if ($this->stores()->withTrashed()->count() === 0) {
+            return false;
+        }
+
+        return $this->stores()->where('is_active', true)->count() === 0;
     }
 
     /**
