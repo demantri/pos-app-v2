@@ -157,6 +157,7 @@ sehingga produk lama tidak tiba-tiba jadi berisik.
 
 | URL | Isi | Siapa |
 |---|---|---|
+| `/` | Tidak merender apa pun — tamu dialihkan ke layar masuk, yang sudah login ke tempat kerjanya | semua |
 | `/stores` | Daftar toko, tambah/ubah/arsip toko | semua (isinya difilter) |
 | `/stores?archived=1` | Toko terarsip, bisa dipulihkan | owner |
 | `/stores/{id}` | Dashboard toko | admin toko |

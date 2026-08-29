@@ -11,9 +11,14 @@ use App\Http\Controllers\Store\StoreUserController;
 use App\Http\Controllers\Store\TransactionController;
 use App\Http\Controllers\StoreController;
 use App\Models\Store;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
-Route::inertia('/', 'Welcome')->name('home');
+// Tidak ada halaman depan: aplikasi ini hanya dipakai orang yang sudah punya
+// akun. Tamu langsung ke layar masuk, yang sudah login langsung ke tempat
+// kerjanya (lihat EntryPointController).
+Route::get('/', fn (Request $request) => redirect()->route($request->user() ? 'dashboard' : 'login'))
+    ->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', EntryPointController::class)->name('dashboard');

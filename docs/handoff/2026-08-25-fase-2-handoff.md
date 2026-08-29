@@ -573,8 +573,17 @@ disentuh; setelan database tidak.
 **Diverifikasi di browser:** tampilan terang dan gelap, plus login sungguhan sebagai
 `kasir.sdr` yang mendarat di `/stores/{ULID}/pos`.
 
-**Belum disentuh:** halaman depan (`/`) masih memakai tampilan bawaan starter kit lengkap
-dengan gambar promosi Laravel.
+**Halaman depan dihapus (permintaan user menyusul di sesi yang sama).** `/` tidak lagi
+merender apa pun: tamu dialihkan ke `login`, yang sudah masuk ke `dashboard` — dan dari sana
+`EntryPointController` melemparnya ke tokonya. Rute `home` sengaja DIPERTAHANKAN namanya
+karena dipakai sebagai tujuan redirect oleh logout, penghapusan profil, dan verifikasi email.
+`resources/js/pages/Welcome.vue` ikut dihapus karena tidak ada lagi yang merendernya.
+
+`ExampleTest` yang dulu menuntut `/` menjawab 200 diperbarui menjadi dua test: tamu dialihkan
+ke layar masuk, pengguna yang sudah masuk dialihkan ke `dashboard`.
+
+Diverifikasi: tamu `/` → `/login`; kasir yang sudah masuk `/` → `/dashboard` →
+`/stores/{ULID}/pos`.
 
 ## 6. Catatan T4 (jalur baca) — sudah dikerjakan, disimpan sebagai rujukan
 
