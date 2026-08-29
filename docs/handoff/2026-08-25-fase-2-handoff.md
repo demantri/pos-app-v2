@@ -1,5 +1,8 @@
 # Serah terima — POS multi-toko, fase 2 (data nyata di database)
 
+> **Lanjutan terbaru ada di `2026-08-29-sesi-fase-3-dan-ui.md`** — baca itu lebih dulu bila Anda
+> sesi/akun baru. Dokumen ini menyimpan sejarah fase 1–2 dan alasan keputusan skemanya.
+
 Ditulis 2026-08-25. Dokumen ini ditulis supaya sesi/akun baru bisa melanjutkan **tanpa konteks
 percakapan sebelumnya**. Baca ini lebih dulu, lalu `2026-08-25-fase-2-ledger.md` di folder yang
 sama bila butuh alasan di balik tiap keputusan.

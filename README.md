@@ -11,7 +11,9 @@ notanya dicetak. Hak akses per peran sudah ditegakkan di server.
 
 Yang belum: fitur langganan (subscribe) — direncanakan, belum dikerjakan.
 
-Riwayat keputusan dan catatan serah terima ada di `docs/handoff/`.
+Riwayat keputusan dan catatan serah terima ada di `docs/handoff/` — mulai dari
+`2026-08-29-sesi-fase-3-dan-ui.md` untuk keadaan terkini, lalu
+`2026-08-25-fase-2-handoff.md` untuk sejarah skema dan alasan keputusannya.
 
 ## Peran dan hak akses
 
