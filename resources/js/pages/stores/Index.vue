@@ -148,7 +148,7 @@ function restore(store: Store): void {
 
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="flex flex-col gap-6 p-4">
-            <div class="flex items-start justify-between gap-4">
+            <div class="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <h1 class="text-2xl font-semibold tracking-tight">
                         {{ showingArchived ? 'Toko Terarsip' : 'Daftar Toko' }}
